@@ -36,6 +36,16 @@
   status = 200
 
 [[redirects]]
+  from   = "/api/service-status"
+  to     = "/.netlify/functions/service-status"
+  status = 200
+
+[[redirects]]
+  from   = "/api/verify-url"
+  to     = "/.netlify/functions/verify-url"
+  status = 200
+
+[[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
