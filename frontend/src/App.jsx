@@ -1,5 +1,22 @@
+/**
+ * VidVert — App.jsx (Final with all 10 gap features integrated)
+ *
+ * Gap 1:  WhatsAppShare        — below Open Video button
+ * Gap 2:  QuickConvertBar      — replaces old 3-button shortcut row
+ * Gap 3:  TrustStrip           — between StatusTicker and tab grid
+ * Gap 4:  StatusPage           — routed via /status tab
+ * Gap 5:  FileSizeEstimate     — below quality selector
+ * Gap 6:  DataSaverToggle      — in header, gates preview fetch
+ * Gap 7:  PWA                  — manifest + SW already in public/
+ * Gap 8:  HeaderTrustBar       — below platform badges in header
+ * Gap 9:  ConversionProgress   — inside AudioConverter (standalone)
+ * Gap 10: useDownloadVerifier  — wraps download result state
+ */
+
 import { useState, useEffect } from 'react';
 import { getDownloadLink, getPreview } from './services/api';
+
+// Core components
 import StatusTicker          from './components/StatusTicker';
 import AudioConverter        from './components/AudioConverter';
 import WatermarkRemover      from './components/WatermarkRemover';
@@ -9,12 +26,41 @@ import VideoTrimmer          from './components/VideoTrimmer';
 import GifConverter          from './components/GifConverter';
 import ImageWatermarkRemover from './components/ImageWatermarkRemover';
 
+// Gap components
+import WhatsAppShare    from './components/WhatsAppShare';
+import QuickConvertBar  from './components/QuickConvertBar';
+import TrustStrip       from './components/TrustStrip';
+import HeaderTrustBar   from './components/HeaderTrustBar';
+import DataSaverToggle  from './components/DataSaverToggle';
+import { FileSizeBadge, estimateDownloadSize } from './components/FileSizeEstimate';
+
+// Gap hooks
+import { useDataSaver }        from './hooks/useDataSaver';
+import { useDownloadVerifier } from './hooks/useDownloadVerifier';
+
+// Pages
+import StatusPage from './pages/StatusPage';
+
+// ── Config ────────────────────────────────────────────────────────────────────
 const PLATFORMS = [
   { id: 'facebook',  label: 'Facebook',  icon: 'f',  color: 'text-blue-400', patterns: [/facebook\.com/, /fb\.watch/] },
   { id: 'twitter',   label: 'X/Twitter', icon: '𝕏',  color: 'text-zinc-200', patterns: [/twitter\.com/, /x\.com/] },
   { id: 'instagram', label: 'Instagram', icon: '◎', color: 'text-pink-400', patterns: [/instagram\.com/] },
 ];
+
 const QUALITIES = ['360', '480', '720', '1080'];
+
+const TABS = [
+  { id: 'downloader', icon: '⬇',  label: 'Download'  },
+  { id: 'audio',      icon: '🎵', label: 'Audio'     },
+  { id: 'video',      icon: '🎬', label: 'Video'     },
+  { id: 'compress',   icon: '🗜',  label: 'Compress'  },
+  { id: 'trim',       icon: '✂',  label: 'Trim'      },
+  { id: 'gif',        icon: '🎞',  label: 'GIF'       },
+  { id: 'watermark',  icon: '🚫', label: 'Watermark' },
+  { id: 'imgwm',      icon: '🖼',  label: 'Image WM'  },
+  { id: 'status',     icon: '📡', label: 'Status'    },
+];
 
 function detectPlatform(url) {
   try { new URL(url); } catch { return null; }
@@ -23,43 +69,49 @@ function detectPlatform(url) {
 function isValidURL(u) { try { new URL(u); return true; } catch { return false; } }
 function openVideo(href) { window.open(href, '_blank', 'noopener,noreferrer'); }
 
-// 8 tabs — renders as 4×2 grid, all visible without scrolling
-const TABS = [
-  { id: 'downloader', icon: '⬇',  label: 'Download',  color: 'text-blue-400'   },
-  { id: 'audio',      icon: '🎵', label: 'Audio',      color: 'text-purple-400' },
-  { id: 'video',      icon: '🎬', label: 'Video',      color: 'text-green-400'  },
-  { id: 'compress',   icon: '🗜',  label: 'Compress',   color: 'text-orange-400' },
-  { id: 'trim',       icon: '✂',  label: 'Trim',       color: 'text-yellow-400' },
-  { id: 'gif',        icon: '🎞',  label: 'GIF',        color: 'text-pink-400'   },
-  { id: 'watermark',  icon: '🚫', label: 'Watermark',  color: 'text-red-400'    },
-  { id: 'imgwm',      icon: '🖼',  label: 'Image WM',   color: 'text-violet-400' },
-];
-
+// ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [url, setUrl]               = useState('');
-  const [quality, setQuality]       = useState('720');
-  const [loading, setLoading]       = useState(false);
-  const [result, setResult]         = useState(null);
-  const [error, setError]           = useState(null);
-  const [preview, setPreview]       = useState(null);
-  const [previewing, setPreviewing] = useState(false);
-  const [activeTab, setActiveTab]   = useState('downloader');
-  const [downloadedUrl, setDownloadedUrl]   = useState(null);
-  const [downloadedName, setDownloadedName] = useState(null);
+  const [url,           setUrl]           = useState('');
+  const [quality,       setQuality]       = useState('720');
+  const [loading,       setLoading]       = useState(false);
+  const [result,        setResult]        = useState(null);
+  const [error,         setError]         = useState(null);
+  const [preview,       setPreview]       = useState(null);
+  const [previewing,    setPreviewing]    = useState(false);
+  const [activeTab,     setActiveTab]     = useState('downloader');
+  const [downloadedUrl, setDownloadedUrl] = useState(null);
+  const [downloadedName,setDownloadedName]= useState(null);
+
+  // Gap 6 — data saver mode
+  const { dataSaver, toggleDataSaver } = useDataSaver();
+
+  // Gap 10 — download URL verifier
+  const verify = useDownloadVerifier(result?.url);
 
   const platform = detectPlatform(url);
   const isStream = result?.status === 'redirect' || result?.status === 'stream';
-  const reset = () => { setResult(null); setError(null); setDownloadedUrl(null); setDownloadedName(null); };
 
+  // Gap 5 — file size estimate
+  const estimatedBytes = preview?.duration
+    ? estimateDownloadSize(preview.duration, quality)
+    : null;
+
+  const reset = () => {
+    setResult(null); setError(null);
+    setDownloadedUrl(null); setDownloadedName(null);
+  };
+
+  // Preview fetch — gated by data saver (Gap 6)
   useEffect(() => {
     if (!platform) { setPreview(null); return; }
+    if (dataSaver) return; // skip preview fetch on slow connections
     let cancelled = false;
     setPreviewing(true); setPreview(null);
     getPreview(url)
       .then(d  => { if (!cancelled) { setPreview(d); setPreviewing(false); } })
       .catch(() => { if (!cancelled) setPreviewing(false); });
     return () => { cancelled = true; };
-  }, [url]);
+  }, [url, dataSaver]);
 
   useEffect(() => {
     if (isStream && result?.url) {
@@ -76,14 +128,22 @@ export default function App() {
     finally { setLoading(false); }
   };
 
+  // Download result state — Gap 10
+  const downloadReady = isStream && (verify.verified || (!verify.verifying && !verify.failed));
+  const downloadFailed = isStream && verify.failed;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
 
       {/* ── Header ── */}
-      <header className="flex flex-col items-center px-4 pt-10 pb-4 gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Vid<span className="text-blue-400">Vert</span>
-        </h1>
+      <header className="flex flex-col items-center px-4 pt-8 pb-3 gap-2">
+        <div className="flex items-center gap-3 w-full max-w-xl justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Vid<span className="text-blue-400">Vert</span>
+          </h1>
+          {/* Gap 6 — Data saver toggle */}
+          <DataSaverToggle dataSaver={dataSaver} onToggle={toggleDataSaver} />
+        </div>
         <p className="text-zinc-400 text-sm text-center max-w-md">
           Download · Convert · Compress · Trim · Remove Watermarks — Free
         </p>
@@ -95,13 +155,18 @@ export default function App() {
             </span>
           ))}
         </div>
+        {/* Gap 8 — Trust bar */}
+        <HeaderTrustBar />
       </header>
 
       {/* ── Status Ticker ── */}
       <StatusTicker />
 
-      {/* ── Tool Grid — 4×2, all tabs visible without scrolling ── */}
-      <nav className="grid grid-cols-4 gap-2 px-4 pt-5 pb-2" aria-label="Tools">
+      {/* Gap 3 — Trust Strip */}
+      <TrustStrip />
+
+      {/* ── Tool Grid — 4×3 with Status, all visible ── */}
+      <nav className="grid grid-cols-4 gap-2 px-4 pt-4 pb-2" aria-label="Tools">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -124,13 +189,27 @@ export default function App() {
       {/* ── Main ── */}
       <main className="flex flex-col items-center px-4 py-6 gap-6 flex-1">
 
-        {/* DOWNLOADER */}
+        {/* ── DOWNLOADER TAB ── */}
         {activeTab === 'downloader' && (
           <div className="w-full max-w-xl flex flex-col gap-4">
+
+            {/* Data saver notice */}
+            {dataSaver && platform && (
+              <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5">
+                <span className="text-green-400 text-xs">📶</span>
+                <p className="text-zinc-500 text-xs">
+                  Data Saver is on — thumbnail preview disabled to save mobile data.
+                </p>
+              </div>
+            )}
+
+            {/* URL input */}
             <div className={`flex items-center gap-2 border rounded-xl px-4 py-3 bg-zinc-900 transition-colors
               ${platform ? 'border-blue-500' : isValidURL(url) ? 'border-red-700' : 'border-zinc-700 focus-within:border-zinc-500'}`}>
               {platform && (
-                <span className={`text-lg flex-shrink-0 ${platform.color}`} aria-hidden="true">{platform.icon}</span>
+                <span className={`text-lg flex-shrink-0 ${platform.color}`} aria-hidden="true">
+                  {platform.icon}
+                </span>
               )}
               <input
                 type="text" value={url}
@@ -151,31 +230,44 @@ export default function App() {
               </p>
             )}
 
-            {/* Preview card */}
-            {platform && (previewing || preview !== null) && (
+            {/* Preview card — hidden when data saver is on */}
+            {!dataSaver && platform && (previewing || preview !== null) && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex gap-3 p-3 items-center">
                 {previewing && !preview?.thumbnail
                   ? <div className="w-28 h-16 bg-zinc-800 rounded-lg flex-shrink-0 animate-pulse" />
                   : preview?.thumbnail
                     ? <img src={preview.thumbnail} alt="Preview" className="w-28 h-16 object-cover rounded-lg flex-shrink-0" />
-                    : <div className={`w-28 h-16 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${platform.color}`}>{platform.icon}</div>
+                    : <div className={`w-28 h-16 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-2xl ${platform.color}`}>
+                        {platform.icon}
+                      </div>
                 }
                 <div className="flex flex-col gap-1 overflow-hidden flex-1">
                   {previewing && !preview?.title
                     ? <div className="h-4 bg-zinc-800 rounded animate-pulse w-3/4" />
-                    : <p className="text-white text-sm font-medium line-clamp-2">{preview?.title || platform.label + ' Video'}</p>
+                    : <p className="text-white text-sm font-medium line-clamp-2">
+                        {preview?.title || platform.label + ' Video'}
+                      </p>
                   }
                   <span className={`text-xs ${platform.color}`}>{platform.icon} {platform.label}</span>
                 </div>
               </div>
             )}
 
+            {/* Quality selector + Gap 5 file size estimate */}
             {platform && (
-              <select value={quality} onChange={(e) => setQuality(e.target.value)}
-                aria-label="Video quality"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none">
-                {QUALITIES.map(q => <option key={q} value={q}>{q}p</option>)}
-              </select>
+              <div className="flex flex-col gap-1.5">
+                <select value={quality} onChange={(e) => setQuality(e.target.value)}
+                  aria-label="Video quality"
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-white text-sm outline-none">
+                  {QUALITIES.map(q => <option key={q} value={q}>{q}p</option>)}
+                </select>
+                {/* Gap 5 — show estimated size to help mobile data users decide */}
+                {estimatedBytes && (
+                  <div className="flex justify-end">
+                    <FileSizeBadge estimatedBytes={estimatedBytes} quality={quality} />
+                  </div>
+                )}
+              </div>
             )}
 
             <button onClick={handleSubmit} disabled={!platform || loading}
@@ -189,12 +281,34 @@ export default function App() {
               </div>
             )}
 
-            {isStream && (
+            {/* Gap 10 — verifying state */}
+            {isStream && verify.verifying && (
+              <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+                <span className="text-zinc-400 text-xs animate-pulse">Verifying download link…</span>
+              </div>
+            )}
+
+            {/* Gap 10 — failed/corrupt link */}
+            {downloadFailed && (
+              <div className="bg-red-950 border border-red-800 rounded-xl px-4 py-3 flex items-start gap-3">
+                <span className="text-red-400 flex-shrink-0">⚠</span>
+                <div>
+                  <p className="text-red-300 text-xs font-medium">Download link issue</p>
+                  <p className="text-red-400 text-xs mt-0.5">{verify.error || 'The link may have expired. Please try again.'}</p>
+                  <button onClick={handleSubmit}
+                    className="text-red-400 hover:text-red-300 text-xs mt-1 underline">Retry</button>
+                </div>
+              </div>
+            )}
+
+            {/* Download result — only shown when verified */}
+            {downloadReady && (
               <div className="flex flex-col gap-2">
                 <button onClick={() => openVideo(result.url)}
                   className="w-full bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-xl transition-colors">
                   ✓ Open Video
                 </button>
+
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-start gap-3">
                   <span className="text-lg mt-0.5" aria-hidden="true">📱</span>
                   <div>
@@ -206,25 +320,24 @@ export default function App() {
                     </p>
                   </div>
                 </div>
-                {/* Quick-action shortcuts */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    { tab: 'audio',     label: '🎵 Convert Audio' },
-                    { tab: 'trim',      label: '✂ Trim Video'    },
-                    { tab: 'watermark', label: '🚫 Remove WM'    },
-                  ].map(({ tab, label }) => (
-                    <button key={tab} onClick={() => setActiveTab(tab)}
-                      className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium py-2 rounded-xl border border-zinc-700 transition-colors">
-                      {label}
-                    </button>
-                  ))}
-                </div>
+
+                {/* Gap 1 — WhatsApp share */}
+                <WhatsAppShare url={result.url} title={preview?.title} />
+
+                {/* Gap 2 — Quick convert bar */}
+                <QuickConvertBar
+                  videoUrl={result.url}
+                  videoTitle={preview?.title}
+                  onNavigate={(tab) => setActiveTab(tab)}
+                />
               </div>
             )}
 
             {result?.status === 'picker' && (
               <div className="flex flex-col gap-3">
-                <p className="text-zinc-400 text-sm text-center">Multiple items — tap each to open, then ⋮ → Download</p>
+                <p className="text-zinc-400 text-sm text-center">
+                  Multiple items — tap each to open, then ⋮ → Download
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {result.picker.map((item, i) => (
                     <button key={i} onClick={() => openVideo(item.url)}
@@ -247,6 +360,8 @@ export default function App() {
         {activeTab === 'gif'       && <GifConverter />}
         {activeTab === 'watermark' && <WatermarkRemover />}
         {activeTab === 'imgwm'     && <ImageWatermarkRemover />}
+        {/* Gap 4 — Status page */}
+        {activeTab === 'status'    && <StatusPage />}
 
         <footer className="mt-8 text-center text-zinc-700 text-xs max-w-xl space-y-1" aria-hidden="true">
           <p>Download Facebook Videos · Download Facebook Reels · Save Facebook Stories</p>
