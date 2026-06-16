@@ -46,6 +46,7 @@ const PLATFORMS = [
   { id: 'facebook',  label: 'Facebook',  icon: 'f',  color: 'text-blue-400', patterns: [/facebook\.com/, /fb\.watch/] },
   { id: 'twitter',   label: 'X/Twitter', icon: '𝕏',  color: 'text-zinc-200', patterns: [/twitter\.com/, /x\.com/] },
   { id: 'instagram', label: 'Instagram', icon: '◎', color: 'text-pink-400', patterns: [/instagram\.com/] },
+  { id: 'tiktok',    label: 'TikTok',    icon: '♪',  color: 'text-cyan-400', patterns: [/tiktok\.com/, /vt\.tiktok\.com/, /vm\.tiktok\.com/] },
 ];
 
 const QUALITIES = ['360', '480', '720', '1080'];
@@ -214,7 +215,7 @@ export default function App() {
               <input
                 type="text" value={url}
                 onChange={(e) => { setUrl(e.target.value); reset(); }}
-                placeholder="Paste Facebook, Twitter or Instagram URL…"
+                placeholder="Paste Facebook, Twitter, Instagram or TikTok URL…"
                 className="flex-1 bg-transparent text-white outline-none placeholder-zinc-500 text-sm"
                 aria-label="Video URL" autoFocus
               />
@@ -226,7 +227,7 @@ export default function App() {
 
             {isValidURL(url) && !platform && (
               <p className="text-red-400 text-xs text-center" role="alert">
-                Only Facebook, X (Twitter) and Instagram links are supported
+                Only Facebook, X (Twitter), Instagram and TikTok links are supported
               </p>
             )}
 
