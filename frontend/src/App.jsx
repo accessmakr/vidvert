@@ -23,6 +23,7 @@ import WatermarkRemover      from './components/WatermarkRemover';
 import VideoConverter        from './components/VideoConverter';
 import VideoCompressor       from './components/VideoCompressor';
 import VideoTrimmer          from './components/VideoTrimmer';
+import BatchConverter        from './components/BatchConverter';
 import GifConverter          from './components/GifConverter';
 import ImageWatermarkRemover from './components/ImageWatermarkRemover';
 
@@ -56,6 +57,7 @@ const TABS = [
   { id: 'video',      icon: '🎬', label: 'Video'     },
   { id: 'compress',   icon: '🗜',  label: 'Compress'  },
   { id: 'trim',       icon: '✂',  label: 'Trim'      },
+  { id: 'batch',      icon: '🗂', label: 'Batch' },
   { id: 'gif',        icon: '🎞',  label: 'GIF'       },
   { id: 'watermark',  icon: '🚫', label: 'Watermark' },
   { id: 'imgwm',      icon: '🖼',  label: 'Image WM'  },
@@ -357,6 +359,7 @@ export default function App() {
         {activeTab === 'video'     && <VideoConverter />}
         {activeTab === 'compress'  && <VideoCompressor />}
         {activeTab === 'trim'      && <VideoTrimmer />}
+        {activeTab === 'batch'     && <BatchConverter />}
         {activeTab === 'gif'       && <GifConverter />}
         {activeTab === 'watermark' && <WatermarkRemover />}
         {activeTab === 'imgwm'     && <ImageWatermarkRemover />}
