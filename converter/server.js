@@ -11,8 +11,9 @@ const { createJob, getJob, updateJob } = require('./utils/jobs');
 const { processAudioJob }               = require('./utils/queue');
 const { scheduleCleanup }               = require('./utils/cleanup');
 const {
-  probeVideoDimensions, runVideoConvertFFmpeg,
-  runVideoCompressFFmpeg, runVideoTrimFFmpeg, runVideoToGifFFmpeg,
+  probeVideoDimensions, getAudioExtension,
+  runVideoConvertFFmpeg, runVideoCompressFFmpeg, runVideoTrimFFmpeg,
+  runVideoToGifFFmpeg, runVideoReframeFFmpeg, runVideoCropFFmpeg,
 } = require('./utils/ffmpeg');
 
 const app = express();
@@ -54,14 +55,17 @@ const upload = multer({
   fileFilter(req,file,cb){ALL_MIMES.has(file.mimetype)?cb(null,true):cb(new Error(`Unsupported: ${file.mimetype}`));},
 });
 
-const VA=new Set(['mp3','m4a','aac','wav','flac','ogg']);
+// Added wma, alac, aiff
+const VA=new Set(['mp3','m4a','aac','wav','flac','ogg','wma','alac','aiff']);
 const VQ=new Set(['64','128','192','256','320']);
 const VF=new Set(['mp4','mkv','webm','avi','mov','wmv','flv','3gp']);
 const VVQ=new Set(['high','medium','low']);
+const VRATIO=new Set(['9:16','1:1','4:5','16:9']);
+const VCROP=new Set(['1:1','9:16','16:9','4:3','4:5']);
 const safe=(p)=>{if(p&&fs.existsSync(p))try{fs.unlinkSync(p);}catch{}};
 const mkJob=(id,x={})=>createJob(id,{status:'queued',statusText:'Queued…',progress:0,eta:null,fileSizeBytes:null,error:null,createdAt:Date.now(),...x});
 
-app.get('/health',(req,res)=>res.json({ok:true,service:'vidvert-converter',v:'5.0'}));
+app.get('/health',(req,res)=>res.json({ok:true,service:'vidvert-converter',v:'6.0'}));
 
 app.post('/jobs',limiter,upload.single('file'),(req,res)=>{
   try{
@@ -72,9 +76,10 @@ app.post('/jobs',limiter,upload.single('file'),(req,res)=>{
     const file=req.file,url=req.body.url?.trim();
     if(!file&&!url) return res.status(400).json({error:'Provide file or url.'});
     const id=uuid();
+    const ext=getAudioExtension(fmt);
     const base=req.body.filename||(file?path.basename(file.originalname,path.extname(file.originalname)):'audio');
     mkJob(id,{format:fmt,quality:ql,inputPath:file?.path||null,inputUrl:url||null,
-      outputPath:path.join(OUTPUT_DIR,`${id}.${fmt}`),filename:`${base}.${fmt}`});
+      outputPath:path.join(OUTPUT_DIR,`${id}.${ext}`),filename:`${base}.${ext}`});
     processAudioJob(id);
     res.json({jobId:id,status:'queued'});
   }catch(e){safe(req.file?.path);res.status(500).json({error:e.message});}
@@ -92,23 +97,14 @@ app.post('/jobs/advanced',limiter,upload.single('file'),(req,res)=>{
       volume:parseInt(req.body.volume||'100'),fadeIn:parseFloat(req.body.fadeIn||'0'),
       fadeOut:parseFloat(req.body.fadeOut||'0'),reverse:req.body.reverse==='true',codecMode:req.body.codecMode||'auto'};
     const id=uuid();
+    const ext=getAudioExtension(fmt);
     const base=req.body.filename||(file?path.basename(file.originalname,path.extname(file.originalname)):'audio');
     mkJob(id,{format:fmt,quality:ql,inputPath:file?.path||null,inputUrl:url||null,
-      outputPath:path.join(OUTPUT_DIR,`${id}.${fmt}`),filename:`${base}.${fmt}`,advanced:adv});
+      outputPath:path.join(OUTPUT_DIR,`${id}.${ext}`),filename:`${base}.${ext}`,advanced:adv});
     processAudioJob(id,{advanced:adv});
     res.json({jobId:id,status:'queued'});
   }catch(e){safe(req.file?.path);res.status(500).json({error:e.message});}
 });
-
-function asyncJob(endpoint,label,handler){
-  app.post(`/${endpoint}`,limiter,upload.single('file'),(req,res)=>{
-    const file=req.file;
-    if(!file) return res.status(400).json({error:'File required.'});
-    const id=uuid();
-    res.json({jobId:id,status:'processing'});
-    handler(id,file,req).catch(()=>{});
-  });
-}
 
 app.post('/convert-video',limiter,upload.single('file'),(req,res)=>{
   const file=req.file;
@@ -190,6 +186,52 @@ app.post('/convert-gif',limiter,upload.single('file'),(req,res)=>{
     try{
       updateJob(id,{status:'converting',statusText:'Generating GIF…'});
       await runVideoToGifFFmpeg(file.path,out,opts,({progress})=>updateJob(id,{progress}));
+      const{size}=fs.statSync(out);
+      updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
+    }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
+    finally{safe(file.path);}
+  })();
+});
+
+app.post('/reframe-video',limiter,upload.single('file'),(req,res)=>{
+  const file=req.file;
+  if(!file) return res.status(400).json({error:'Video file required.'});
+  const ratio=req.body.ratio||'9:16';
+  if(!VRATIO.has(ratio)) return res.status(400).json({error:`Invalid ratio. Use: ${[...VRATIO].join(', ')}`});
+  const base=req.body.filename||path.basename(file.originalname,path.extname(file.originalname));
+  const id=uuid();const out=path.join(OUTPUT_DIR,`${id}_reframed.mp4`);
+  mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_${ratio.replace(':','x')}.mp4`});
+  res.json({jobId:id,status:'processing'});
+  (async()=>{
+    try{
+      updateJob(id,{status:'converting',statusText:'Reframing video…'});
+      await runVideoReframeFFmpeg(file.path,out,ratio,({progress})=>updateJob(id,{progress}));
+      const{size}=fs.statSync(out);
+      updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
+    }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
+    finally{safe(file.path);}
+  })();
+});
+
+/**
+ * POST /crop-video
+ * Classic center crop to a target aspect ratio. UNLIKE /reframe-video,
+ * this DOES cut off content at the edges — use Reframe instead if
+ * the goal is preserving all content.
+ */
+app.post('/crop-video',limiter,upload.single('file'),(req,res)=>{
+  const file=req.file;
+  if(!file) return res.status(400).json({error:'Video file required.'});
+  const ratio=req.body.ratio||'1:1';
+  if(!VCROP.has(ratio)) return res.status(400).json({error:`Invalid ratio. Use: ${[...VCROP].join(', ')}`});
+  const base=req.body.filename||path.basename(file.originalname,path.extname(file.originalname));
+  const id=uuid();const out=path.join(OUTPUT_DIR,`${id}_cropped.mp4`);
+  mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_${ratio.replace(':','x')}_cropped.mp4`});
+  res.json({jobId:id,status:'processing'});
+  (async()=>{
+    try{
+      updateJob(id,{status:'converting',statusText:'Cropping video…'});
+      await runVideoCropFFmpeg(file.path,out,ratio,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
@@ -280,4 +322,4 @@ app.use((err,req,res,_next)=>{
   res.status(err.status||500).json({error:err.message||'Internal server error.'});
 });
 
-app.listen(PORT,()=>console.log(`VidVert Converter v5 on :${PORT}`));
+app.listen(PORT,()=>console.log(`VidVert Converter v6 on :${PORT}`));
