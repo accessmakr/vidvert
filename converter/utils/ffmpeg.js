@@ -9,9 +9,38 @@ const AUDIO_FORMATS = {
   wav:  { codec: 'pcm_s16le',  lossless: true  },
   flac: { codec: 'flac',       lossless: true  },
   ogg:  { codec: 'libvorbis',  lossless: false },
+  // New formats — WMA (native FFmpeg encoder), ALAC (Apple Lossless,
+  // packaged in .m4a container by convention via `ext` override),
+  // AIFF (native PCM, no special library needed)
+  wma:  { codec: 'wmav2',      lossless: false },
+  alac: { codec: 'alac',       lossless: true,  ext: 'm4a', extra: ['-movflags','+faststart'] },
+  aiff: { codec: 'pcm_s16be',  lossless: true  },
 };
 
-/** Check file has at least one audio stream. Returns Promise<boolean> */
+/**
+ * Resolve the actual file extension for a format id.
+ * Most formats use their id as the extension directly.
+ * ALAC is the one exception — conventionally packaged as .m4a.
+ */
+function getAudioExtension(format) {
+  return AUDIO_FORMATS[format]?.ext || format;
+}
+
+const RATIO_DIMENSIONS = {
+  '9:16': { w: 1080, h: 1920 },
+  '1:1':  { w: 1080, h: 1080 },
+  '4:5':  { w: 1080, h: 1350 },
+  '16:9': { w: 1920, h: 1080 },
+};
+
+const CROP_RATIOS = {
+  '1:1':  1,
+  '9:16': 9 / 16,
+  '16:9': 16 / 9,
+  '4:3':  4 / 3,
+  '4:5':  4 / 5,
+};
+
 function probeAudioStream(inputPath) {
   return new Promise(resolve => {
     const p = spawn('ffprobe',['-v','error','-select_streams','a','-show_entries','stream=codec_type','-of','json',inputPath]);
@@ -22,7 +51,6 @@ function probeAudioStream(inputPath) {
   });
 }
 
-/** Get video width + height. Returns Promise<{width,height}> */
 function probeVideoDimensions(inputPath) {
   return new Promise((resolve, reject) => {
     const p = spawn('ffprobe',['-v','quiet','-print_format','json','-show_streams','-select_streams','v:0',inputPath]);
@@ -37,7 +65,6 @@ function probeVideoDimensions(inputPath) {
   });
 }
 
-/** Get duration in seconds. Returns Promise<number> */
 function probeDuration(inputPath) {
   return new Promise((resolve, reject) => {
     const p = spawn('ffprobe',['-v','error','-show_entries','format=duration','-of','json',inputPath]);
@@ -51,7 +78,6 @@ function probeDuration(inputPath) {
   });
 }
 
-/** Build -af filter string from advanced params. Returns string or null. */
 function buildAudioFilters({ volume=100, fadeIn=0, fadeOut=0, reverse=false, duration=null }) {
   const f = [];
   if (volume !== 100)              f.push(`volume=${(volume/100).toFixed(2)}`);
@@ -61,7 +87,6 @@ function buildAudioFilters({ volume=100, fadeIn=0, fadeOut=0, reverse=false, dur
   return f.length ? f.join(',') : null;
 }
 
-/** Run FFmpeg progress — shared helper */
 function _run(args, onProgress) {
   return new Promise((resolve, reject) => {
     const ff = spawn('ffmpeg', args);
@@ -84,15 +109,10 @@ function _run(args, onProgress) {
   });
 }
 
-/**
- * Audio extraction — standard or advanced (trim/volume/fade/reverse/codec).
- * NOTE: -vn is NOT used with -map 0:a:0 (FFmpeg 8.x conflict → exit 234).
- */
 async function runAudioFFmpeg(inputPath, outputPath, format, qualityKbps, advanced={}, onProgress) {
   const { codec, lossless, extra=[] } = AUDIO_FORMATS[format];
   const { trimStart, trimEnd, codecMode='auto' } = advanced;
 
-  // Resolve fade-out duration if needed
   let duration = null;
   if (advanced.fadeOut > 0) {
     try { duration = await probeDuration(inputPath); } catch {}
@@ -167,8 +187,66 @@ async function runVideoToGifFFmpeg(inputPath, outputPath, { fps=10, width=480, s
   if (fs.existsSync(palettePath)) try { fs.unlinkSync(palettePath); } catch {}
 }
 
+/**
+ * Reframe video to a different aspect ratio — blurred letterbox technique.
+ * No content cropped out. FREE tier feature, pure FFmpeg.
+ */
+function runVideoReframeFFmpeg(inputPath, outputPath, ratioKey, onProgress) {
+  const r = RATIO_DIMENSIONS[ratioKey] || RATIO_DIMENSIONS['9:16'];
+  const filter = [
+    `[0:v]scale=${r.w}:${r.h}:force_original_aspect_ratio=increase,crop=${r.w}:${r.h},boxblur=30:30[bg]`,
+    `[0:v]scale=${r.w}:-2:force_original_aspect_ratio=decrease[fg]`,
+    `[bg][fg]overlay=(W-w)/2:(H-h)/2[out]`,
+  ].join(';');
+
+  return _run([
+    '-i', inputPath, '-filter_complex', filter, '-map', '[out]', '-map', '0:a?',
+    '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-y', outputPath,
+  ], onProgress);
+}
+
+/**
+ * Crop video to a target aspect ratio — classic center crop.
+ * Unlike reframe, this DOES remove content (cuts off edges) to fill
+ * the target shape exactly. Probes actual dimensions first so the
+ * crop box is always a valid integer region within the source frame.
+ */
+async function runVideoCropFFmpeg(inputPath, outputPath, ratioKey, onProgress) {
+  const { width, height } = await probeVideoDimensions(inputPath);
+  const targetRatio  = CROP_RATIOS[ratioKey] || 1;
+  const currentRatio = width / height;
+
+  let cropW, cropH;
+  if (currentRatio > targetRatio) {
+    // source wider than target — crop the sides, keep full height
+    cropH = height;
+    cropW = Math.round(height * targetRatio);
+  } else {
+    // source taller/narrower than target — crop top/bottom, keep full width
+    cropW = width;
+    cropH = Math.round(width / targetRatio);
+  }
+  // Even dimensions required by most encoders
+  cropW = cropW % 2 === 0 ? cropW : cropW - 1;
+  cropH = cropH % 2 === 0 ? cropH : cropH - 1;
+  cropW = Math.max(2, Math.min(cropW, width));
+  cropH = Math.max(2, Math.min(cropH, height));
+
+  const x = Math.floor((width  - cropW) / 2);
+  const y = Math.floor((height - cropH) / 2);
+
+  return _run([
+    '-i', inputPath,
+    '-vf', `crop=${cropW}:${cropH}:${x}:${y}`,
+    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+    '-c:a', 'copy',
+    '-y', outputPath,
+  ], onProgress);
+}
+
 module.exports = {
-  probeAudioStream, probeVideoDimensions, probeDuration,
+  probeAudioStream, probeVideoDimensions, probeDuration, getAudioExtension,
   runAudioFFmpeg, runVideoConvertFFmpeg, runVideoCompressFFmpeg,
-  runVideoTrimFFmpeg, runVideoToGifFFmpeg,
+  runVideoTrimFFmpeg, runVideoToGifFFmpeg, runVideoReframeFFmpeg,
+  runVideoCropFFmpeg,
 };
