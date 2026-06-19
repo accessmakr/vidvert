@@ -31,6 +31,9 @@ const FORMATS = [
   { id: 'wav',  label: 'WAV',  desc: 'Lossless',       lossless: true  },
   { id: 'flac', label: 'FLAC', desc: 'Hi-Fi lossless', lossless: true  },
   { id: 'ogg',  label: 'OGG',  desc: 'Open source',    lossless: false },
+  { id: 'wma',  label: 'WMA',  desc: 'Windows Media',  lossless: false },
+  { id: 'alac', label: 'ALAC', desc: 'Apple Lossless', lossless: true  },
+  { id: 'aiff', label: 'AIFF', desc: 'Pro audio',      lossless: true  },
 ];
 
 const QUALITIES = [
@@ -67,7 +70,7 @@ function fmtEta(s) {
 }
 
 function estimateBytes(fileSize, format, kbps) {
-  if (!fileSize || ['wav', 'flac'].includes(format)) return null;
+  if (!fileSize || ['wav', 'flac', 'aiff', 'alac'].includes(format)) return null;
   return Math.round(fileSize * (parseInt(kbps) / 1500));
 }
 
