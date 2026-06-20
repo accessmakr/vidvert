@@ -1,3 +1,15 @@
+/**
+ * VideoReframe.jsx — v2
+ *
+ * FIX: the previous polling logic silently retried on every failed
+ * status check for the full 10-minute timeout window. If the Render
+ * service restarted mid-job (which wipes all in-memory job state),
+ * the job would return 404 forever and the UI just sat on
+ * "Reframing video…" with no indication anything was wrong — this
+ * is exactly the "gets stuck" bug. Now it gives up after 5
+ * consecutive failed checks (~15-20 seconds) and shows a clear,
+ * honest error instead of waiting silently.
+ */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { uploadVideoForProcessing, getConversionStatus, getConverterDownloadUrl } from '../services/api';
 import { formatBytes } from '../utils/formatBytes';
@@ -11,6 +23,7 @@ const RATIOS = [
 const ACCEPT='video/*,.mp4,.mkv,.webm,.avi,.mov,.wmv,.flv,.3gp,.m4v,.mpeg,.mpg';
 const ALLOWED=/\.(mp4|mkv|webm|avi|mov|wmv|flv|3gp|m4v|mpeg|mpg)$/i;
 const POLL_MS=2000,TIMEOUT_MS=10*60*1000;
+const MAX_CONSECUTIVE_FAILURES=5;
 function saveFile(url,name){const a=document.createElement('a');a.href=url;a.download=name||'video';document.body.appendChild(a);a.click();document.body.removeChild(a);}
 
 export default function VideoReframe(){
@@ -19,20 +32,32 @@ export default function VideoReframe(){
   const [phase,setPhase]=useState('idle');const [uploadPct,setUploadPct]=useState(0);
   const [jobId,setJobId]=useState(null);const [jobState,setJobState]=useState(null);
   const [error,setError]=useState(null);const inputRef=useRef(null);
-  const pollRef=useRef(null);const startRef=useRef(null);
+  const pollRef=useRef(null);const startRef=useRef(null);const failRef=useRef(0);
   const isDone=phase==='done',isFailed=phase==='error',isWorking=phase==='uploading'||phase==='converting';
 
   const stopPoll=useCallback(()=>{if(pollRef.current){clearTimeout(pollRef.current);pollRef.current=null;}},[]);
   useEffect(()=>{
     if(!jobId||phase!=='converting') return;
     startRef.current=Date.now();
+    failRef.current=0;
     const tick=async()=>{
       if(Date.now()-startRef.current>TIMEOUT_MS){stopPoll();setPhase('error');setError('Timed out.');return;}
-      try{const d=await getConversionStatus(jobId);setJobState(d);
+      try{
+        const d=await getConversionStatus(jobId);
+        failRef.current=0; // reset on any successful check
+        setJobState(d);
         if(d.status==='done'){stopPoll();setPhase('done');}
         else if(d.status==='error'){stopPoll();setPhase('error');setError(d.error||'Reframe failed.');}
         else pollRef.current=setTimeout(tick,POLL_MS);
-      }catch{pollRef.current=setTimeout(tick,POLL_MS*2);}
+      }catch{
+        failRef.current++;
+        if(failRef.current>=MAX_CONSECUTIVE_FAILURES){
+          stopPoll();setPhase('error');
+          setError('Lost connection to the server — it may have restarted. Please try again.');
+          return;
+        }
+        pollRef.current=setTimeout(tick,POLL_MS*2);
+      }
     };
     tick(); return stopPoll;
   },[jobId,phase,stopPoll]);
