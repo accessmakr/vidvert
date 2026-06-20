@@ -10,8 +10,9 @@ const { v4: uuid } = require('uuid');
 const { createJob, getJob, updateJob } = require('./utils/jobs');
 const { processAudioJob }               = require('./utils/queue');
 const { scheduleCleanup }               = require('./utils/cleanup');
+const { acquireSlot, releaseSlot }      = require('./utils/concurrency');
 const {
-  probeVideoDimensions, getAudioExtension,
+  probeVideoDimensions, getAudioExtension, buildWatermarkFilter,
   runVideoConvertFFmpeg, runVideoCompressFFmpeg, runVideoTrimFFmpeg,
   runVideoToGifFFmpeg, runVideoReframeFFmpeg, runVideoCropFFmpeg,
 } = require('./utils/ffmpeg');
@@ -55,7 +56,6 @@ const upload = multer({
   fileFilter(req,file,cb){ALL_MIMES.has(file.mimetype)?cb(null,true):cb(new Error(`Unsupported: ${file.mimetype}`));},
 });
 
-// Added wma, alac, aiff
 const VA=new Set(['mp3','m4a','aac','wav','flac','ogg','wma','alac','aiff']);
 const VQ=new Set(['64','128','192','256','320']);
 const VF=new Set(['mp4','mkv','webm','avi','mov','wmv','flv','3gp']);
@@ -65,7 +65,7 @@ const VCROP=new Set(['1:1','9:16','16:9','4:3','4:5']);
 const safe=(p)=>{if(p&&fs.existsSync(p))try{fs.unlinkSync(p);}catch{}};
 const mkJob=(id,x={})=>createJob(id,{status:'queued',statusText:'Queued…',progress:0,eta:null,fileSizeBytes:null,error:null,createdAt:Date.now(),...x});
 
-app.get('/health',(req,res)=>res.json({ok:true,service:'vidvert-converter',v:'6.0'}));
+app.get('/health',(req,res)=>res.json({ok:true,service:'vidvert-converter',v:'7.0'}));
 
 app.post('/jobs',limiter,upload.single('file'),(req,res)=>{
   try{
@@ -118,13 +118,15 @@ app.post('/convert-video',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}.${fmt}`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Converting format…'});
       await runVideoConvertFFmpeg(file.path,out,fmt,ql,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
@@ -138,13 +140,15 @@ app.post('/compress-video',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_compressed.mp4`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Compressing…'});
       await runVideoCompressFFmpeg(file.path,out,ql,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
@@ -159,13 +163,15 @@ app.post('/trim-video',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_trimmed${ext}`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Trimming video…'});
       await runVideoTrimFFmpeg(file.path,out,start,end,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
@@ -183,13 +189,15 @@ app.post('/convert-gif',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}.gif`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Generating GIF…'});
       await runVideoToGifFFmpeg(file.path,out,opts,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
@@ -203,22 +211,18 @@ app.post('/reframe-video',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_${ratio.replace(':','x')}.mp4`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Reframing video…'});
       await runVideoReframeFFmpeg(file.path,out,ratio,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
-/**
- * POST /crop-video
- * Classic center crop to a target aspect ratio. UNLIKE /reframe-video,
- * this DOES cut off content at the edges — use Reframe instead if
- * the goal is preserving all content.
- */
 app.post('/crop-video',limiter,upload.single('file'),(req,res)=>{
   const file=req.file;
   if(!file) return res.status(400).json({error:'Video file required.'});
@@ -229,16 +233,25 @@ app.post('/crop-video',limiter,upload.single('file'),(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_${ratio.replace(':','x')}_cropped.mp4`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Cropping video…'});
       await runVideoCropFFmpeg(file.path,out,ratio,({progress})=>updateJob(id,{progress}));
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',error:e.message,statusText:'Failed'});}
-    finally{safe(file.path);}
+    finally{if(slot)releaseSlot();safe(file.path);}
   })();
 });
 
+/**
+ * POST /watermark — video watermark removal.
+ * FIX: now uses the shared buildWatermarkFilter helper, which caps
+ * source resolution before the blur filter on large videos, and
+ * guarantees the blur patch and overlay base are always the same
+ * resolution via `split` (prevents mismatched-size overlay failures).
+ */
 app.post('/watermark',limiter,upload.single('file'),async(req,res)=>{
   const file=req.file;
   if(!file) return res.status(400).json({error:'Video file required.'});
@@ -250,17 +263,14 @@ app.post('/watermark',limiter,upload.single('file'),async(req,res)=>{
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_clean.mp4`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
       const{width,height}=await probeVideoDimensions(file.path);
-      let xP,yP,wP,hP;
-      if(mode==='percent'){xP=Math.round(width*(xR/100));yP=Math.round(height*(yR/100));wP=Math.round(width*(wR/100));hP=Math.round(height*(hR/100));}
-      else{xP=Math.round(xR);yP=Math.round(yR);wP=Math.round(wR);hP=Math.round(hR);}
-      xP=Math.max(0,Math.min(xP,width-2));yP=Math.max(0,Math.min(yP,height-2));
-      wP=Math.max(2,Math.min(wP,width-xP));hP=Math.max(2,Math.min(hP,height-yP));
-      const flt=[`[0:v]crop=${wP}:${hP}:${xP}:${yP},boxblur=20:20[wm]`,`[0:v][wm]overlay=${xP}:${yP}[out]`].join(';');
+      const{filter}=buildWatermarkFilter({width,height,xInput:xR,yInput:yR,wInput:wR,hInput:hR,mode,blurRadius:20});
+      await acquireSlot(id,updateJob); slot=true;
       updateJob(id,{status:'converting',statusText:'Removing watermark…'});
       await new Promise((res2,rej)=>{
-        const ff=spawn('ffmpeg',['-i',file.path,'-filter_complex',flt,'-map','[out]','-map','0:a?','-c:a','copy','-c:v','libx264','-preset','fast','-crf','23','-y',out]);
+        const ff=spawn('ffmpeg',['-i',file.path,'-filter_complex',filter,'-map','[out]','-map','0:a?','-c:a','copy','-c:v','libx264','-preset','fast','-crf','23','-y',out]);
         let dur=null,errBuf='';
         ff.stderr.on('data',c=>{const t=c.toString();errBuf=(errBuf+t).slice(-2000);
           if(!dur){const m=t.match(/Duration:\s*(\d+):(\d+):(\d+\.?\d*)/);if(m)dur=+m[1]*3600+ +m[2]*60+parseFloat(m[3]);}
@@ -271,33 +281,52 @@ app.post('/watermark',limiter,upload.single('file'),async(req,res)=>{
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',statusText:'Removal failed',error:e.message});}
-    finally{safe(file?.path);}
+    finally{if(slot)releaseSlot();safe(file?.path);}
   })();
 });
 
+/**
+ * POST /watermark-image — image watermark removal.
+ * FIX: this endpoint previously NEVER converted percent coordinates
+ * to pixels and never probed actual image dimensions — it treated
+ * every input as raw pixel values regardless of the `mode` sent by
+ * the frontend. A percent-based preset (e.g. "Top Right" = x:75,
+ * y:0, w:25, h:20) was being read as literal pixels, producing a
+ * tiny or invalid crop box unrelated to the actual image size. That
+ * mismatch is what caused "at least one of its streams received no
+ * packets" — the crop region didn't make sense for the real image,
+ * so the filter graph produced zero output frames.
+ *
+ * Now probes real dimensions first and uses the same shared filter
+ * builder as the video endpoint, so percent mode is actually honored.
+ */
 app.post('/watermark-image',limiter,upload.single('file'),async(req,res)=>{
   const file=req.file;
   if(!file) return res.status(400).json({error:'Image file required.'});
-  const xP=Math.max(0,parseInt(req.body.x||0)),yP=Math.max(0,parseInt(req.body.y||0));
-  const wP=Math.max(1,parseInt(req.body.w||100)),hP=Math.max(1,parseInt(req.body.h||50));
+  const mode=req.body.mode||'percent';
+  const xR=parseFloat(req.body.x||0),yR=parseFloat(req.body.y||0);
+  const wR=parseFloat(req.body.w||25),hR=parseFloat(req.body.h||20);
   const ext=path.extname(file.originalname)||'.jpg';
   const base=req.body.filename||path.basename(file.originalname,ext);
   const id=uuid();const out=path.join(OUTPUT_DIR,`${id}_clean${ext}`);
   mkJob(id,{inputPath:file.path,outputPath:out,filename:`${base}_clean${ext}`});
   res.json({jobId:id,status:'processing'});
   (async()=>{
+    let slot=false;
     try{
       updateJob(id,{status:'converting',statusText:'Removing watermark…',progress:20});
-      const flt=[`[0:v]crop=${wP}:${hP}:${xP}:${yP},boxblur=25:25[wm]`,`[0:v][wm]overlay=${xP}:${yP}[out]`].join(';');
+      const{width,height}=await probeVideoDimensions(file.path); // works for static images too
+      const{filter}=buildWatermarkFilter({width,height,xInput:xR,yInput:yR,wInput:wR,hInput:hR,mode,blurRadius:25});
+      await acquireSlot(id,updateJob); slot=true;
       await new Promise((res2,rej)=>{
-        const ff=spawn('ffmpeg',['-i',file.path,'-filter_complex',flt,'-map','[out]','-frames:v','1','-y',out]);
+        const ff=spawn('ffmpeg',['-i',file.path,'-filter_complex',filter,'-map','[out]','-frames:v','1','-y',out]);
         let errBuf='';ff.stderr.on('data',c=>{errBuf=(errBuf+c.toString()).slice(-1000);});
         ff.on('close',code=>code===0?res2():rej(new Error(`FFmpeg ${code}: ${errBuf.slice(-200)}`)));ff.on('error',rej);
       });
       const{size}=fs.statSync(out);
       updateJob(id,{status:'done',progress:100,statusText:'Complete',fileSizeBytes:size});
     }catch(e){updateJob(id,{status:'error',statusText:'Image processing failed',error:e.message});}
-    finally{safe(file?.path);}
+    finally{if(slot)releaseSlot();safe(file?.path);}
   })();
 });
 
@@ -322,4 +351,4 @@ app.use((err,req,res,_next)=>{
   res.status(err.status||500).json({error:err.message||'Internal server error.'});
 });
 
-app.listen(PORT,()=>console.log(`VidVert Converter v6 on :${PORT}`));
+app.listen(PORT,()=>console.log(`VidVert Converter v7 on :${PORT}`));
