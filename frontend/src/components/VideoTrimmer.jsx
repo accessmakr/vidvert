@@ -1,12 +1,8 @@
 /**
- * VideoTrimmer.jsx — v2
- *
- * FIX: replaced the single "type HH:MM:SS with colons" text field
- * with three separate number inputs (mobile numeric keyboard, no
- * colon-typing needed) and added a real <video> preview with
- * "Set as Start" / "Set as End" buttons that read the video's
- * current playback position — so you can scrub to the right spot
- * and tap a button instead of guessing timestamps.
+ * VideoTrimmer.jsx — v3
+ * FIX: Start/End time inputs were side-by-side with an arrow between
+ * them, which overshoots narrow mobile screens. Now stacked vertically
+ * — Start on its own row, End directly below it. Nothing else changed.
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { uploadVideoForProcessing, getConversionStatus, getConverterDownloadUrl } from '../services/api';
@@ -33,14 +29,13 @@ function secondsToHMS(totalSeconds) {
   return toHMS(h,m,s);
 }
 
-/** Three separate number inputs instead of one free-text field */
 function TimeInput({ value, onChange, disabled, label }) {
   const { h, m, s } = parseHMS(value);
   const update = (nh,nm,ns) => onChange(toHMS(nh,nm,ns));
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-zinc-500 text-xs">{label}</label>
-      <div className="flex items-center gap-1">
+    <div className="flex items-center justify-between gap-3">
+      <label className="text-zinc-400 text-xs font-medium flex-shrink-0">{label}</label>
+      <div className="flex items-center gap-1.5">
         <input type="number" min="0" max="23" value={h} disabled={disabled}
           onChange={(e)=>update(parseInt(e.target.value)||0, m, s)}
           className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg px-1 py-2 text-white text-sm text-center outline-none disabled:opacity-50" />
@@ -165,13 +160,12 @@ export default function VideoTrimmer(){
         </div>
       )}
 
+      {/* Trim Range — stacked vertically, never overflows narrow screens */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3">
         <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide">Trim Range</p>
-        <div className="flex items-center gap-4">
-          <TimeInput value={startTime} onChange={setStartTime} disabled={isWorking} label="Start (H : M : S)" />
-          <span className="text-zinc-600 mt-5">→</span>
-          <TimeInput value={endTime || '00:00:00'} onChange={setEndTime} disabled={isWorking} label="End (H : M : S)" />
-        </div>
+        <TimeInput value={startTime} onChange={setStartTime} disabled={isWorking} label="Start" />
+        <div className="border-t border-zinc-800" />
+        <TimeInput value={endTime || '00:00:00'} onChange={setEndTime} disabled={isWorking} label="End" />
       </div>
 
       {!isDone&&<button onClick={start} disabled={isWorking||!canStart}
