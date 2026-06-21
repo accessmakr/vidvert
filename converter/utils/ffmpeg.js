@@ -234,23 +234,25 @@ async function runVideoToGifFFmpeg(inputPath, outputPath, { fps=10, width=480, s
 }
 
 /**
- * Reframe video — REAL fix this time.
+ * Reframe video — blur made nearly free via low-resolution blur +
+ * upscale, instead of shrinking the whole output canvas further.
  *
- * The previous version capped the SOURCE decode resolution, but that
- * never mattered for small source files — the actual cost driver was
- * always the OUTPUT canvas. Building a full 1080×1920 background
- * frame and running a 30px box blur across it, for every single
- * frame of the video, is genuinely heavy regardless of how small the
- * source file is. That's what was exceeding Render's memory limit
- * on a single job with nothing else running.
- *
- * Fix: output canvas dropped from 1080-based to 720-based (under
- * half the pixel count) and blur radius reduced from 30 to 20.
- * 720p vertical is standard quality for TikTok/Reels/Shorts — this
- * is not a visible quality compromise for the target use case.
+ * Box blur is a low-frequency effect — blurring at a small fraction
+ * of the target size and scaling the result back up looks visually
+ * identical to blurring at full resolution, but the blur operation
+ * itself only touches a fraction of the pixels. The foreground
+ * (the actual subject) is a SEPARATE, unblurred scale step, so this
+ * costs zero sharpness on the part that matters. This gives far more
+ * memory/CPU headroom than just reducing output resolution would,
+ * while keeping the same 720-based output quality.
  */
 async function runVideoReframeFFmpeg(inputPath, outputPath, ratioKey, onProgress) {
   const r = RATIO_DIMENSIONS[ratioKey] || RATIO_DIMENSIONS['9:16'];
+
+  // Blur computed at ~1/4 scale, then upscaled — roughly 16x fewer
+  // pixels for the blur step itself.
+  const blurW = Math.max(64, Math.round(r.w / 4));
+  const blurH = Math.max(64, Math.round(r.h / 4));
 
   let preScale = '';
   try {
@@ -260,7 +262,7 @@ async function runVideoReframeFFmpeg(inputPath, outputPath, ratioKey, onProgress
 
   const filter = [
     `[0:v]${preScale}split=2[src1][src2]`,
-    `[src1]scale=${r.w}:${r.h}:force_original_aspect_ratio=increase,crop=${r.w}:${r.h},boxblur=20:20[bg]`,
+    `[src1]scale=${blurW}:${blurH}:force_original_aspect_ratio=increase,crop=${blurW}:${blurH},boxblur=6:6,scale=${r.w}:${r.h}[bg]`,
     `[src2]scale=${r.w}:-2:force_original_aspect_ratio=decrease[fg]`,
     `[bg][fg]overlay=(W-w)/2:(H-h)/2[out]`,
   ].join(';');
