@@ -1,21 +1,27 @@
 /**
  * src/data/seoToolPages.js
  * PHASE 1 — Data backbone for every programmatic SEO page.
+ * AMENDED — original version was missing three blueprint-required
+ * fields: logic, methodology, and citations. Caught before Phase 5
+ * was built on top of an incomplete foundation, patched here rather
+ * than silently working around the gap.
+ *
+ * logic / methodology: one sentence each, per spec.
+ * citations: verified-real URLs only — FFmpeg's own documentation,
+ * the H.264/CRF encoding guide, Cobalt's GitHub repo, and MDN's
+ * media formats reference. No invented or guessed URLs.
  *
  * Starter set: 9 pages, one per EXISTING standalone tool component.
- * Deliberately not forcing every keyword variant into its own page —
- * near-duplicate pages targeting the same intent get penalized by
- * Google rather than rewarded, so each entry here represents a
- * genuinely distinct search intent, not a thin reskin of another.
- *
- * Downloader-themed pages (facebook-video-downloader, etc.) are
- * intentionally NOT here yet — the downloader UI is still inline
- * inside App.jsx, not a standalone component. Tracked as a Phase 3
- * addition, not silently skipped.
- *
- * toolComponent values must exactly match the component names
- * resolved in the lookup map inside SeoToolPage.jsx (Phase 5).
+ * Downloader-themed pages intentionally not here yet — tracked
+ * separately, see VideoDownloader.jsx extraction notes.
  */
+
+const CITATIONS = {
+  ffmpegDocs: { label: 'FFmpeg Documentation', url: 'https://ffmpeg.org/documentation.html' },
+  h264Guide:  { label: 'FFmpeg H.264 Encoding Guide', url: 'https://trac.ffmpeg.org/wiki/Encode/H.264' },
+  cobalt:     { label: 'Cobalt (open-source media tool)', url: 'https://github.com/imputnet/cobalt' },
+  mdnFormats: { label: 'MDN Web Media Formats Guide', url: 'https://developer.mozilla.org/en-US/docs/Web/Media/Formats' },
+};
 
 export const SEO_TOOL_PAGES = [
   {
@@ -25,6 +31,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Convert Video to MP3 — Free, No Sign-Up',
     subheading: 'Pull clean audio out of any video file in seconds.',
     toolComponent: 'AudioConverter',
+    logic: 'The video file is processed to keep only its audio stream, discarding the video track entirely.',
+    methodology: 'Audio extraction and re-encoding is performed server-side using FFmpeg, the open-source multimedia framework.',
+    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
     contentSections: [
       {
         heading: 'When you need audio without the video',
@@ -52,6 +61,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Convert Audio Files Between Formats',
     subheading: 'WAV to MP3, FLAC to M4A, and everything in between.',
     toolComponent: 'AudioConverter',
+    logic: 'Each format is re-encoded using the codec appropriate to the target container, preserving audio content while changing how it is stored.',
+    methodology: 'Conversion runs through FFmpeg with format-specific codec mapping for each of the nine supported audio formats.',
+    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
     contentSections: [
       {
         heading: 'Already-recorded audio, the right format',
@@ -77,6 +89,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Compress Video Online',
     subheading: 'Smaller file, same content, no quality guesswork.',
     toolComponent: 'VideoCompressor',
+    logic: 'The video is re-encoded at a bitrate calculated as a percentage of its own original bitrate, guaranteeing a real size reduction regardless of how the source was originally compressed.',
+    methodology: 'Source bitrate is probed first, then a target bitrate (30%, 50%, or 70% lower) is applied via FFmpeg\u2019s libx264 encoder.',
+    citations: [CITATIONS.h264Guide, CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Why some compressors make files bigger, not smaller',
@@ -102,6 +117,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Trim Video Online',
     subheading: 'Cut the part you want, skip the rest.',
     toolComponent: 'VideoTrimmer',
+    logic: 'The video is cut at the selected start and end points using stream copy, which removes unwanted sections without decoding or re-encoding any frames.',
+    methodology: 'FFmpeg\u2019s -ss and -to seek flags are combined with -c copy to trim via container-level stream copy.',
+    citations: [CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Scrub to the moment, not the math',
@@ -127,6 +145,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Convert Video to GIF',
     subheading: 'Turn a clip into a looping GIF in seconds.',
     toolComponent: 'GifConverter',
+    logic: 'A custom color palette is generated from the specific clip first, then used to encode the GIF, rather than relying on a fixed generic palette.',
+    methodology: 'Two-pass encoding via FFmpeg\u2019s palettegen and paletteuse filters minimizes the color banding common in single-pass GIF conversion.',
+    citations: [CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Built for short clips, not full videos',
@@ -152,6 +173,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Remove Watermark from Video',
     subheading: 'Clean up a logo or overlay without re-shooting anything.',
     toolComponent: 'WatermarkRemover',
+    logic: 'The watermarked region is cropped out, heavily blurred, then composited back over the original frame in the same position.',
+    methodology: 'A split filter graph isolates the watermark region for boxblur processing while the rest of the frame remains untouched, via FFmpeg\u2019s filter_complex.',
+    citations: [CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Preset positions for common platforms',
@@ -177,6 +201,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Remove Watermark from Image',
     subheading: 'Clean up a logo or text overlay from any photo.',
     toolComponent: 'ImageWatermarkRemover',
+    logic: 'The same crop-blur-overlay technique used for video is applied to a single still frame, processing in under a second.',
+    methodology: 'FFmpeg\u2019s image handling pipeline processes a single frame using the identical filter_complex approach as the video watermark tool.',
+    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
     contentSections: [
       {
         heading: 'See the result before downloading',
@@ -202,6 +229,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Convert Video to Vertical',
     subheading: 'Resize for TikTok, Reels and Shorts \u2014 nothing cropped out.',
     toolComponent: 'VideoReframe',
+    logic: 'The source is scaled to fit within the target frame, and a separately blurred, scaled copy of the same video fills any remaining empty space.',
+    methodology: 'A split filter graph generates a low-resolution blurred background and a sharp foreground scale in parallel, composited via FFmpeg\u2019s overlay filter.',
+    citations: [CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Why this is different from cropping',
@@ -227,6 +257,9 @@ export const SEO_TOOL_PAGES = [
     h1: 'Crop Video Online',
     subheading: 'Cut to a new shape, centered automatically.',
     toolComponent: 'VideoCropper',
+    logic: 'The crop region is calculated automatically from the video\u2019s real dimensions and the target ratio, trimming evenly from the sides or top and bottom to keep the center.',
+    methodology: 'Actual source dimensions are probed first via ffprobe, then a centered crop box is computed and applied with FFmpeg\u2019s crop filter.',
+    citations: [CITATIONS.ffmpegDocs],
     contentSections: [
       {
         heading: 'Crop versus reframe \u2014 picking the right one',
