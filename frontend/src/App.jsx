@@ -1,20 +1,14 @@
 /**
  * src/App.jsx
- * PHASE 6 — Now a thin router shell, not the app itself. The actual
- * homepage UI lives in pages/ToolApp.jsx. This file's only job is
- * wrapping everything in the providers SEO needs (HelmetProvider)
- * and defining where each URL path goes.
- *
- * Netlify already has the required SPA catch-all in netlify.toml
- * ( "/*" → "/index.html" status 200 ) — confirmed present from
- * earlier in this project, no netlify.toml change needed for
- * client-side routing to work.
+ * PHASE 6 — Thin router shell.
+ * Updated to add /tools hub route (ToolsHub).
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 
 import ToolApp     from './pages/ToolApp';
+import ToolsHub    from './pages/ToolsHub';
 import SeoToolPage from './pages/SeoToolPage';
 
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
@@ -28,16 +22,16 @@ export default function App() {
     <HelmetProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/"                element={<ToolApp />} />
-          <Route path="/tools/:slug"     element={<SeoToolPage />} />
+          <Route path="/"               element={<ToolApp />} />
+          <Route path="/tools"          element={<ToolsHub />} />
+          <Route path="/tools/:slug"    element={<SeoToolPage />} />
 
-          <Route path="/privacy-policy"  element={<PrivacyPolicy />} />
-          <Route path="/terms-of-use"    element={<TermsOfUse />} />
-          <Route path="/about"           element={<AboutUs />} />
-          <Route path="/cookie-policy"   element={<CookiePolicy />} />
-          <Route path="/contact"         element={<ContactUs />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-use"   element={<TermsOfUse />} />
+          <Route path="/about"          element={<AboutUs />} />
+          <Route path="/cookie-policy"  element={<CookiePolicy />} />
+          <Route path="/contact"        element={<ContactUs />} />
 
-          {/* Unknown path — send home rather than a blank screen */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
