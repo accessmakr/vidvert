@@ -1,14 +1,12 @@
 /**
  * src/components/ToolsLinksBar.jsx
- * Links the homepage to all 9 SEO tool pages. Renders on ToolApp,
- * below the main tab content, above the SEO keyword footer.
- *
- * Not a hub page — that's still a separate, real, future addition.
- * This is the minimum honest fix: every /tools/:slug page is now
- * reachable from the homepage, not just from sitemap.xml.
+ * Links the homepage to all 9 SEO tool pages AND the /tools hub.
+ * Renders on ToolApp below the main tab content, above the SEO footer.
  */
+
 import { Link } from 'react-router-dom';
 import { SEO_TOOL_PAGES } from '../data/seoToolPages';
+
 export default function ToolsLinksBar() {
   return (
     <div className="w-full max-w-xl flex flex-col gap-2 mt-4">
@@ -25,13 +23,13 @@ export default function ToolsLinksBar() {
             {page.h1}
           </Link>
         ))}
+        <Link
+          to="/tools"
+          className="bg-zinc-900 border border-blue-900 hover:border-blue-700 text-blue-400 hover:text-blue-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+        >
+          All Tools →
+        </Link>
       </div>
-      <Link
-  to="/tools"
-  className="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs px-3 py-1.5 rounded-lg transition-colors"
->
-  All Tools →
-</Link>
     </div>
   );
 }
