@@ -28,6 +28,12 @@ export default function ToolsLinksBar() {
           </Link>
         ))}
       </div>
+      <Link
+  to="/tools"
+  className="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200 text-xs px-3 py-1.5 rounded-lg transition-colors"
+>
+  All Tools →
+</Link>
     </div>
   );
 }
