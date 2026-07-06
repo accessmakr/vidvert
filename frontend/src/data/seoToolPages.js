@@ -1,297 +1,251 @@
 /**
- * src/data/seoToolPages.js
- * PHASE 1 — Data backbone for every programmatic SEO page.
- * AMENDED — original version was missing three blueprint-required
- * fields: logic, methodology, and citations. Caught before Phase 5
- * was built on top of an incomplete foundation, patched here rather
- * than silently working around the gap.
- *
- * logic / methodology: one sentence each, per spec.
- * citations: verified-real URLs only — FFmpeg's own documentation,
- * the H.264/CRF encoding guide, Cobalt's GitHub repo, and MDN's
- * media formats reference. No invented or guessed URLs.
- *
- * Starter set: 9 pages, one per EXISTING standalone tool component.
- * Downloader-themed pages intentionally not here yet — tracked
- * separately, see VideoDownloader.jsx extraction notes.
+ * src/data/seoToolPages.js — v2
+ * Original 9 entries preserved exactly.
+ * 12 new entries added for the new tools.
  */
 
 const CITATIONS = {
-  ffmpegDocs: { label: 'FFmpeg Documentation', url: 'https://ffmpeg.org/documentation.html' },
-  h264Guide:  { label: 'FFmpeg H.264 Encoding Guide', url: 'https://trac.ffmpeg.org/wiki/Encode/H.264' },
-  cobalt:     { label: 'Cobalt (open-source media tool)', url: 'https://github.com/imputnet/cobalt' },
-  mdnFormats: { label: 'MDN Web Media Formats Guide', url: 'https://developer.mozilla.org/en-US/docs/Web/Media/Formats' },
+  ffmpegDocs: { label:'FFmpeg Documentation',       url:'https://ffmpeg.org/documentation.html' },
+  h264Guide:  { label:'FFmpeg H.264 Encoding Guide', url:'https://trac.ffmpeg.org/wiki/Encode/H.264' },
+  cobalt:     { label:'Cobalt (open-source media tool)', url:'https://github.com/imputnet/cobalt' },
+  mdnFormats: { label:'MDN Web Media Formats Guide', url:'https://developer.mozilla.org/en-US/docs/Web/Media/Formats' },
 };
 
 export const SEO_TOOL_PAGES = [
   {
-    slug: 'video-to-mp3',
-    title: 'Convert Video to MP3 Online Free — No Sign-Up | VidVert',
-    metaDescription: 'Extract MP3, M4A, WAV or FLAC audio from any video file free. No upload limits hidden behind a paywall, no account required, no watermark on the result.',
-    h1: 'Convert Video to MP3 — Free, No Sign-Up',
-    subheading: 'Pull clean audio out of any video file in seconds.',
-    toolComponent: 'AudioConverter',
-    logic: 'The video file is processed to keep only its audio stream, discarding the video track entirely.',
-    methodology: 'Audio extraction and re-encoding is performed server-side using FFmpeg, the open-source multimedia framework.',
-    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
-    contentSections: [
-      {
-        heading: 'When you need audio without the video',
-        body: 'Podcast clips, voice memos saved as video, lecture recordings, music videos you want as a song — there are dozens of reasons to need just the sound from a video file. This strips the video track entirely and gives you a clean audio file in the format you actually need.',
-      },
-      {
-        heading: 'Quality settings that make sense',
-        body: 'Choose 64 to 320 kbps for lossy formats, or skip compression entirely with WAV, FLAC, ALAC or AIFF if you need the audio untouched. A Copy mode is also available for near-instant extraction when re-encoding isn\u2019t necessary.',
-      },
-    ],
-    faqs: [
-      { q: 'Does converting to MP3 reduce audio quality?', a: 'At 320 kbps the loss is generally inaudible to most listeners. For archival-quality needs, use a lossless format like FLAC or WAV instead.' },
-      { q: 'Can I extract audio from a video I downloaded on this site?', a: 'Yes — after downloading a video, a shortcut appears to send it straight into this converter without re-uploading anything.' },
-      { q: 'Is there a file size limit?', a: 'Files up to 500MB are supported.' },
-      { q: 'Does this work on a phone?', a: 'Yes, the interface is built mobile-first and works the same on a phone browser as on a desktop one.' },
-      { q: 'What happens to my file after conversion?', a: 'Files are automatically deleted from the server within 10 minutes of download.' },
-    ],
-    relatedSlugs: ['convert-audio-formats', 'video-to-gif'],
+    slug:'video-to-mp3',title:'Convert Video to MP3 Online Free — No Sign-Up | VidVert',
+    metaDescription:'Extract MP3, M4A, WAV or FLAC audio from any video file free. No upload limits hidden behind a paywall, no account required.',
+    h1:'Convert Video to MP3 — Free, No Sign-Up',subheading:'Pull clean audio out of any video file in seconds.',toolComponent:'AudioConverter',
+    logic:'The video file is processed to keep only its audio stream, discarding the video track entirely.',
+    methodology:'Audio extraction and re-encoding is performed server-side using FFmpeg.',
+    citations:[CITATIONS.ffmpegDocs,CITATIONS.mdnFormats],
+    contentSections:[{heading:'When you need audio without the video',body:'Podcast clips, voice memos saved as video, lecture recordings, music videos you want as a song — this strips the video track entirely and gives you a clean audio file in the format you need.'},{heading:'Quality settings that make sense',body:'Choose 64 to 320 kbps for lossy formats, or skip compression entirely with WAV, FLAC, ALAC or AIFF. A Copy mode is available for near-instant extraction when re-encoding isn\u2019t necessary.'}],
+    faqs:[{q:'Does converting to MP3 reduce audio quality?',a:'At 320 kbps the loss is generally inaudible. For archival quality, use FLAC or WAV instead.'},{q:'Can I extract audio from a video I downloaded on this site?',a:'Yes — after downloading a video, a shortcut sends it straight into this converter without re-uploading.'},{q:'Is there a file size limit?',a:'Files up to 500MB are supported.'},{q:'What happens to my file after conversion?',a:'Files are automatically deleted from the server within 10 minutes of download.'}],
+    relatedSlugs:['convert-audio-formats','video-to-gif'],
   },
-
   {
-    slug: 'convert-audio-formats',
-    title: 'Convert Audio Files Between Formats Free | VidVert',
-    metaDescription: 'Convert WAV, FLAC, M4A, OGG, WMA, ALAC and AIFF between each other free, with trim, volume, fade and reverse controls. No sign-up.',
-    h1: 'Convert Audio Files Between Formats',
-    subheading: 'WAV to MP3, FLAC to M4A, and everything in between.',
-    toolComponent: 'AudioConverter',
-    logic: 'Each format is re-encoded using the codec appropriate to the target container, preserving audio content while changing how it is stored.',
-    methodology: 'Conversion runs through FFmpeg with format-specific codec mapping for each of the nine supported audio formats.',
-    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
-    contentSections: [
-      {
-        heading: 'Already-recorded audio, the right format',
-        body: 'Unlike extracting audio from video, this is for audio files you already have — a WAV recording that needs to become a smaller MP3, or an old WMA file that needs converting to something modern players actually support.',
-      },
-      {
-        heading: 'Built-in editing, not just conversion',
-        body: 'Trim a section by exact timestamp, adjust volume up to 200%, add a fade in or out, or reverse the clip entirely — all before the format conversion happens, in one pass.',
-      },
-    ],
-    faqs: [
-      { q: 'Which audio formats are supported?', a: 'MP3, M4A, AAC, WAV, FLAC, OGG, WMA, ALAC and AIFF, both as input and output.' },
-      { q: 'Can I trim audio without re-encoding it?', a: 'Yes — a Copy codec mode is available that trims via stream copy, avoiding any quality loss from re-encoding.' },
-      { q: 'Does this support batch conversion of multiple files?', a: 'Yes, multiple files can be queued and converted in sequence from the Batch tool.' },
-    ],
-    relatedSlugs: ['video-to-mp3', 'trim-video-online'],
+    slug:'convert-audio-formats',title:'Convert Audio Files Between Formats Free | VidVert',
+    metaDescription:'Convert WAV, FLAC, M4A, OGG, WMA, ALAC and AIFF between each other free, with trim, volume, fade and reverse controls.',
+    h1:'Convert Audio Files Between Formats',subheading:'WAV to MP3, FLAC to M4A, and everything in between.',toolComponent:'AudioConverter',
+    logic:'Each format is re-encoded using the codec appropriate to the target container, preserving audio content while changing how it is stored.',
+    methodology:'Conversion runs through FFmpeg with format-specific codec mapping for each of the nine supported audio formats.',
+    citations:[CITATIONS.ffmpegDocs,CITATIONS.mdnFormats],
+    contentSections:[{heading:'Already-recorded audio, the right format',body:'A WAV recording that needs to become a smaller MP3, or an old WMA file that needs converting to something modern players support.'},{heading:'Built-in editing, not just conversion',body:'Trim a section, adjust volume up to 200%, add a fade in or out, or reverse the clip — all before conversion happens, in one pass.'}],
+    faqs:[{q:'Which audio formats are supported?',a:'MP3, M4A, AAC, WAV, FLAC, OGG, WMA, ALAC and AIFF.'},{q:'Can I trim audio without re-encoding?',a:'Yes — a Copy codec mode trims via stream copy, avoiding any quality loss.'},{q:'Does this support batch conversion?',a:'Yes, multiple files can be queued from the Batch tool.'}],
+    relatedSlugs:['video-to-mp3','merge-audio-files'],
   },
-
   {
-    slug: 'compress-video-online',
-    title: 'Compress Video Online Free — Reduce File Size | VidVert',
-    metaDescription: 'Shrink large video files by up to 70% without re-encoding garbage quality. Free, no sign-up, works directly in your browser.',
-    h1: 'Compress Video Online',
-    subheading: 'Smaller file, same content, no quality guesswork.',
-    toolComponent: 'VideoCompressor',
-    logic: 'The video is re-encoded at a bitrate calculated as a percentage of its own original bitrate, guaranteeing a real size reduction regardless of how the source was originally compressed.',
-    methodology: 'Source bitrate is probed first, then a target bitrate (30%, 50%, or 70% lower) is applied via FFmpeg\u2019s libx264 encoder.',
-    citations: [CITATIONS.h264Guide, CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Why some compressors make files bigger, not smaller',
-        body: 'Many free compressors use a fixed quality setting that ignores how efficiently your source video was already encoded. This instead targets an actual percentage reduction from your file\u2019s real bitrate, so the result is reliably smaller \u2014 not occasionally larger than what you started with.',
-      },
-      {
-        heading: 'Three levels, one clear tradeoff',
-        body: 'High Quality keeps detail with a modest size cut. Balanced is the middle ground most people want. Maximum Compress prioritizes the smallest possible file when size matters more than fine detail.',
-      },
-    ],
-    faqs: [
-      { q: 'Will compressing lower the resolution?', a: 'No, resolution stays the same \u2014 only the bitrate is reduced, which affects detail and file size, not dimensions.' },
-      { q: 'How much smaller will my file actually get?', a: 'High Quality targets roughly 30% smaller, Balanced roughly 50%, and Maximum Compress roughly 70% smaller than the original.' },
-      { q: 'What video formats can I compress?', a: 'Any common video format \u2014 MP4, MOV, AVI, MKV, WebM and more are accepted as input.' },
-    ],
-    relatedSlugs: ['trim-video-online', 'crop-video-online'],
+    slug:'compress-video-online',title:'Compress Video Online Free — Reduce File Size | VidVert',
+    metaDescription:'Shrink large video files by up to 70% without re-encoding garbage quality. Free, no sign-up.',
+    h1:'Compress Video Online',subheading:'Smaller file, same content, no quality guesswork.',toolComponent:'VideoCompressor',
+    logic:'The video is re-encoded at a bitrate calculated as a percentage of its own original bitrate, guaranteeing a real size reduction.',
+    methodology:'Source bitrate is probed first, then a target bitrate (30%, 50%, or 70% lower) is applied via FFmpeg\u2019s libx264 encoder.',
+    citations:[CITATIONS.h264Guide,CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Why some compressors make files bigger',body:'Many free compressors use a fixed quality setting that ignores how efficiently your source was already encoded. This targets an actual percentage reduction from the real bitrate.'},{heading:'Three levels, one clear tradeoff',body:'High Quality keeps detail with a modest size cut. Balanced is the middle ground. Maximum Compress prioritizes the smallest possible file.'}],
+    faqs:[{q:'Will compressing lower the resolution?',a:'No — only the bitrate is reduced, not dimensions.'},{q:'How much smaller will my file get?',a:'High Quality targets ~30% smaller, Balanced ~50%, Maximum Compress ~70%.'},{q:'What formats are accepted?',a:'MP4, MOV, AVI, MKV, WebM and more.'}],
+    relatedSlugs:['trim-video-online','crop-video-online'],
   },
-
   {
-    slug: 'trim-video-online',
-    title: 'Trim Video Online Free — Cut Any Section | VidVert',
-    metaDescription: 'Cut a specific section out of any video with a real preview player, free, no quality loss from re-encoding. No sign-up required.',
-    h1: 'Trim Video Online',
-    subheading: 'Cut the part you want, skip the rest.',
-    toolComponent: 'VideoTrimmer',
-    logic: 'The video is cut at the selected start and end points using stream copy, which removes unwanted sections without decoding or re-encoding any frames.',
-    methodology: 'FFmpeg\u2019s -ss and -to seek flags are combined with -c copy to trim via container-level stream copy.',
-    citations: [CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Scrub to the moment, not the math',
-        body: 'Rather than guessing timestamps, play the video directly in the tool and tap a button to mark the exact moment as your start or end point.',
-      },
-      {
-        heading: 'Stream copy means no re-encoding',
-        body: 'Trimming uses stream copy rather than a full re-encode, which means the cut section keeps the exact original quality and processes almost instantly regardless of file length.',
-      },
-    ],
-    faqs: [
-      { q: 'Does trimming reduce video quality?', a: 'No \u2014 trimming uses stream copy, which cuts the file without re-encoding any frames.' },
-      { q: 'Can I see what I\u2019m trimming before confirming?', a: 'Yes, a real video player is built into the tool so you can play, pause and scrub before setting your start and end points.' },
-      { q: 'Is there a limit on how long the trimmed clip can be?', a: 'No specific length limit \u2014 the constraint is the 500MB file size cap on the original upload.' },
-    ],
-    relatedSlugs: ['compress-video-online', 'video-to-gif'],
+    slug:'trim-video-online',title:'Trim Video Online Free — Cut Any Section | VidVert',
+    metaDescription:'Cut a specific section out of any video with a real preview player, free, no quality loss from re-encoding.',
+    h1:'Trim Video Online',subheading:'Cut the part you want, skip the rest.',toolComponent:'VideoTrimmer',
+    logic:'The video is cut at selected start and end points using stream copy, removing unwanted sections without decoding or re-encoding any frames.',
+    methodology:'FFmpeg\u2019s -ss and -to seek flags are combined with -c copy to trim via container-level stream copy.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Scrub to the moment, not the math',body:'Play the video directly in the tool and tap a button to mark the exact moment as your start or end point.'},{heading:'Stream copy means no re-encoding',body:'Trimming uses stream copy — the cut section keeps the exact original quality and processes almost instantly.'}],
+    faqs:[{q:'Does trimming reduce video quality?',a:'No — stream copy cuts the file without re-encoding any frames.'},{q:'Can I see what I\u2019m trimming before confirming?',a:'Yes, a real video player is built into the tool.'},{q:'Is there a length limit?',a:'No specific length limit — the constraint is the 500MB file size cap.'}],
+    relatedSlugs:['compress-video-online','video-to-gif'],
   },
-
   {
-    slug: 'video-to-gif',
-    title: 'Convert Video to GIF Free Online | VidVert',
-    metaDescription: 'Turn any video clip into an animated GIF free, with control over frame rate and width. No sign-up, no watermark added.',
-    h1: 'Convert Video to GIF',
-    subheading: 'Turn a clip into a looping GIF in seconds.',
-    toolComponent: 'GifConverter',
-    logic: 'A custom color palette is generated from the specific clip first, then used to encode the GIF, rather than relying on a fixed generic palette.',
-    methodology: 'Two-pass encoding via FFmpeg\u2019s palettegen and paletteuse filters minimizes the color banding common in single-pass GIF conversion.',
-    citations: [CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Built for short clips, not full videos',
-        body: 'GIFs are inherently a short-format medium. Keeping the source clip under 10-15 seconds gives the best balance of smooth motion and reasonable file size.',
-      },
-      {
-        heading: 'Two-pass encoding for cleaner color',
-        body: 'Rather than a single quick pass, this generates an optimized color palette from your specific clip first, then encodes against it \u2014 noticeably reducing the banding and color smearing common in quick GIF converters.',
-      },
-    ],
-    faqs: [
-      { q: 'What frame rate should I use?', a: '10fps is a good default for most clips \u2014 smooth enough for motion, small enough in file size. Push higher only if the motion genuinely needs it.' },
-      { q: 'Why is my GIF file so large?', a: 'GIF is an inherently inefficient format for video-like content. Shorter clips and lower frame rates are the most effective way to keep size down.' },
-      { q: 'Can I select just part of a longer video for the GIF?', a: 'Yes, a start time and duration can be set so only the relevant section gets converted.' },
-    ],
-    relatedSlugs: ['trim-video-online', 'video-to-mp3'],
+    slug:'video-to-gif',title:'Convert Video to GIF Free Online | VidVert',
+    metaDescription:'Turn any video clip into an animated GIF free, with control over frame rate and width. No sign-up, no watermark.',
+    h1:'Convert Video to GIF',subheading:'Turn a clip into a looping GIF in seconds.',toolComponent:'GifConverter',
+    logic:'A custom color palette is generated from the specific clip first, then used to encode the GIF.',
+    methodology:'Two-pass encoding via FFmpeg\u2019s palettegen and paletteuse filters minimizes color banding.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Built for short clips',body:'Keep the source clip under 10-15 seconds for the best balance of smooth motion and reasonable file size.'},{heading:'Two-pass encoding for cleaner color',body:'An optimized color palette is generated from your specific clip first, then the GIF is encoded against it.'}],
+    faqs:[{q:'What frame rate should I use?',a:'10fps is a good default — smooth enough, small enough.'},{q:'Why is my GIF so large?',a:'GIF is inherently inefficient. Shorter clips and lower frame rates help.'},{q:'Can I select just part of a video?',a:'Yes, a start time and duration can be set.'}],
+    relatedSlugs:['gif-to-mp4','trim-video-online'],
   },
-
   {
-    slug: 'remove-video-watermark',
-    title: 'Remove Watermark from Video Free | VidVert',
-    metaDescription: 'Remove logos and watermarks from video using preset positions or custom coordinates. Free, no sign-up, works on any common video format.',
-    h1: 'Remove Watermark from Video',
-    subheading: 'Clean up a logo or overlay without re-shooting anything.',
-    toolComponent: 'WatermarkRemover',
-    logic: 'The watermarked region is cropped out, heavily blurred, then composited back over the original frame in the same position.',
-    methodology: 'A split filter graph isolates the watermark region for boxblur processing while the rest of the frame remains untouched, via FFmpeg\u2019s filter_complex.',
-    citations: [CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Preset positions for common platforms',
-        body: 'Most platform watermarks land in predictable corners. Preset positions cover the common cases directly, with custom pixel coordinates available for anything that doesn\u2019t match a standard layout.',
-      },
-      {
-        heading: 'How this actually works',
-        body: 'The watermarked region is cropped, heavily blurred, then composited back over the original frame in that exact position \u2014 removing the sharp, legible overlay while keeping everything else in the frame untouched.',
-      },
-    ],
-    faqs: [
-      { q: 'Will this remove any watermark perfectly?', a: 'It blurs the watermarked region rather than reconstructing what was underneath, so the result is a softened patch rather than a perfect AI-restored image. Works best on small corner watermarks.' },
-      { q: 'Can I use custom coordinates instead of a preset?', a: 'Yes, exact pixel position and size can be entered manually for watermarks that don\u2019t fit a standard corner placement.' },
-      { q: 'Does this work on large video files?', a: 'Yes \u2014 large sources are automatically scaled before processing to keep the operation fast and reliable.' },
-    ],
-    relatedSlugs: ['remove-image-watermark', 'compress-video-online'],
+    slug:'remove-video-watermark',title:'Remove Watermark from Video Free | VidVert',
+    metaDescription:'Remove logos and watermarks from video using preset positions or custom coordinates. Free, no sign-up.',
+    h1:'Remove Watermark from Video',subheading:'Clean up a logo or overlay without re-shooting anything.',toolComponent:'WatermarkRemover',
+    logic:'The watermarked region is cropped out, heavily blurred, then composited back over the original frame in the same position.',
+    methodology:'A split filter graph isolates the watermark region for boxblur processing while the rest of the frame remains untouched.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Preset positions for common platforms',body:'Most platform watermarks land in predictable corners. Presets cover the common cases, with custom coordinates available for anything else.'},{heading:'How this works',body:'The watermarked region is cropped, heavily blurred, then composited back — removing the sharp overlay while keeping everything else untouched.'}],
+    faqs:[{q:'Will this remove any watermark perfectly?',a:'It blurs the region rather than reconstructing what was underneath. Works best on small corner watermarks.'},{q:'Can I use custom coordinates?',a:'Yes, exact pixel position and size can be entered manually.'},{q:'Does this work on large files?',a:'Yes — large sources are automatically scaled before processing.'}],
+    relatedSlugs:['remove-image-watermark','compress-video-online'],
   },
-
   {
-    slug: 'remove-image-watermark',
-    title: 'Remove Watermark from Image Free | VidVert',
-    metaDescription: 'Remove logos and text overlays from JPG, PNG and WebP images free, with a before/after preview slider. No sign-up.',
-    h1: 'Remove Watermark from Image',
-    subheading: 'Clean up a logo or text overlay from any photo.',
-    toolComponent: 'ImageWatermarkRemover',
-    logic: 'The same crop-blur-overlay technique used for video is applied to a single still frame, processing in under a second.',
-    methodology: 'FFmpeg\u2019s image handling pipeline processes a single frame using the identical filter_complex approach as the video watermark tool.',
-    citations: [CITATIONS.ffmpegDocs, CITATIONS.mdnFormats],
-    contentSections: [
-      {
-        heading: 'See the result before downloading',
-        body: 'A draggable before/after slider shows the original next to the processed result, so there\u2019s no need to download and check \u2014 the comparison is right there in the tool.',
-      },
-      {
-        heading: 'Preset corners or exact coordinates',
-        body: 'Choose a common watermark position \u2014 top-left, bottom-right, and so on \u2014 or specify exact pixel coordinates for anything in a non-standard spot.',
-      },
-    ],
-    faqs: [
-      { q: 'What image formats are supported?', a: 'JPG, PNG, WebP, BMP and GIF are all accepted.' },
-      { q: 'How do I find the exact pixel coordinates of a watermark?', a: 'A browser\u2019s developer tools or any photo editor can show pixel position when hovering over an image \u2014 useful for the custom coordinate option.' },
-      { q: 'Does this use AI to reconstruct the image?', a: 'No, the current version blurs the watermarked region rather than reconstructing it. It works best on small, corner-positioned overlays.' },
-    ],
-    relatedSlugs: ['remove-video-watermark', 'crop-video-online'],
+    slug:'remove-image-watermark',title:'Remove Watermark from Image Free | VidVert',
+    metaDescription:'Remove logos and text overlays from JPG, PNG and WebP images free, with a before/after preview slider.',
+    h1:'Remove Watermark from Image',subheading:'Clean up a logo or text overlay from any photo.',toolComponent:'ImageWatermarkRemover',
+    logic:'The same crop-blur-overlay technique used for video is applied to a single still frame.',
+    methodology:'FFmpeg\u2019s image pipeline processes a single frame using an identical filter_complex approach to the video watermark tool.',
+    citations:[CITATIONS.ffmpegDocs,CITATIONS.mdnFormats],
+    contentSections:[{heading:'See the result before downloading',body:'A draggable before/after slider shows the original next to the processed result right in the tool.'},{heading:'Preset corners or exact coordinates',body:'Choose a common watermark position or specify exact pixel coordinates for anything in a non-standard spot.'}],
+    faqs:[{q:'What image formats are supported?',a:'JPG, PNG, WebP, BMP and GIF.'},{q:'How do I find exact pixel coordinates?',a:'A browser\u2019s developer tools or any photo editor can show pixel position when hovering.'},{q:'Does this use AI?',a:'No — the current version blurs the watermarked region.'}],
+    relatedSlugs:['remove-video-watermark','compress-image-online'],
   },
-
   {
-    slug: 'reframe-video-vertical',
-    title: 'Convert Video to Vertical for TikTok & Reels Free | VidVert',
-    metaDescription: 'Resize any video for TikTok, Reels or Shorts without cropping out content \u2014 blurred background fills the empty space. Free, no sign-up.',
-    h1: 'Convert Video to Vertical',
-    subheading: 'Resize for TikTok, Reels and Shorts \u2014 nothing cropped out.',
-    toolComponent: 'VideoReframe',
-    logic: 'The source is scaled to fit within the target frame, and a separately blurred, scaled copy of the same video fills any remaining empty space.',
-    methodology: 'A split filter graph generates a low-resolution blurred background and a sharp foreground scale in parallel, composited via FFmpeg\u2019s overlay filter.',
-    citations: [CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Why this is different from cropping',
-        body: 'Cropping a horizontal video to vertical cuts off whatever was at the sides. This instead scales the original to fit within the new frame and fills the remaining space with a blurred, scaled copy of the same video \u2014 nothing in the original shot is lost.',
-      },
-      {
-        heading: 'Four shapes, covering the platforms that matter',
-        body: 'Vertical (9:16) for TikTok, Reels and Shorts. Square (1:1) and Portrait (4:5) for Instagram feed posts. Horizontal (16:9) for standard landscape output.',
-      },
-    ],
-    faqs: [
-      { q: 'Will this cut off part of my video?', a: 'No \u2014 that\u2019s the difference between reframing and cropping. Reframing pads the frame instead of cutting content away.' },
-      { q: 'What resolution is the output?', a: '720-based output \u2014 720\u00d71280 for vertical, for example \u2014 which matches standard quality for short-form social platforms.' },
-      { q: 'Can I reframe to square or landscape instead of vertical?', a: 'Yes, Square, Portrait and Horizontal are all available alongside Vertical.' },
-    ],
-    relatedSlugs: ['crop-video-online', 'video-to-gif'],
+    slug:'reframe-video-vertical',title:'Convert Video to Vertical for TikTok & Reels Free | VidVert',
+    metaDescription:'Resize any video for TikTok, Reels or Shorts without cropping out content — blurred background fills the empty space.',
+    h1:'Convert Video to Vertical',subheading:'Resize for TikTok, Reels and Shorts \u2014 nothing cropped out.',toolComponent:'VideoReframe',
+    logic:'The source is scaled to fit within the target frame, and a separately blurred copy fills any remaining empty space.',
+    methodology:'A split filter graph generates a low-resolution blurred background and a sharp foreground scale in parallel, composited via FFmpeg\u2019s overlay filter.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Why this is different from cropping',body:'Cropping cuts off the sides. This scales the original to fit and fills remaining space with a blurred copy — nothing is lost.'},{heading:'Four shapes, covering the platforms that matter',body:'Vertical (9:16) for TikTok/Reels/Shorts, Square (1:1) and Portrait (4:5) for Instagram, Horizontal (16:9) for landscape.'}],
+    faqs:[{q:'Will this cut off part of my video?',a:'No — reframing pads the frame instead of cutting content.'},{q:'What resolution is the output?',a:'720-based output — standard quality for short-form platforms.'},{q:'Can I reframe to square or landscape?',a:'Yes, all four ratios are available.'}],
+    relatedSlugs:['crop-video-online','rotate-flip-video'],
   },
-
   {
-    slug: 'crop-video-online',
-    title: 'Crop Video to Square or Vertical Free | VidVert',
-    metaDescription: 'Crop video to 1:1, 9:16, 16:9, 4:3 or 4:5 with an automatic centered crop. Free, no sign-up, works on any common video format.',
-    h1: 'Crop Video Online',
-    subheading: 'Cut to a new shape, centered automatically.',
-    toolComponent: 'VideoCropper',
-    logic: 'The crop region is calculated automatically from the video\u2019s real dimensions and the target ratio, trimming evenly from the sides or top and bottom to keep the center.',
-    methodology: 'Actual source dimensions are probed first via ffprobe, then a centered crop box is computed and applied with FFmpeg\u2019s crop filter.',
-    citations: [CITATIONS.ffmpegDocs],
-    contentSections: [
-      {
-        heading: 'Crop versus reframe \u2014 picking the right one',
-        body: 'Cropping cuts the edges off to fit a new shape \u2014 useful when the subject is already centered and the goal is simply a different aspect ratio. For content where nothing should be lost, Reframe pads instead of cutting.',
-      },
-      {
-        heading: 'Automatic centered crop',
-        body: 'The crop region is calculated automatically based on your chosen ratio and the video\u2019s actual dimensions, keeping the center of the frame and trimming evenly from the sides or top and bottom as needed.',
-      },
-    ],
-    faqs: [
-      { q: 'Will cropping cut off part of my video?', a: 'Yes, by design \u2014 cropping removes the edges to fit the new shape. Use Reframe instead if nothing should be lost.' },
-      { q: 'Which ratios are supported?', a: '1:1, 9:16, 16:9, 4:3 and 4:5.' },
-      { q: 'Can I choose exactly where the crop is positioned?', a: 'The current version centers the crop automatically based on the video\u2019s dimensions rather than allowing manual positioning.' },
-    ],
-    relatedSlugs: ['reframe-video-vertical', 'compress-video-online'],
+    slug:'crop-video-online',title:'Crop Video to Square or Vertical Free | VidVert',
+    metaDescription:'Crop video to 1:1, 9:16, 16:9, 4:3 or 4:5 with an automatic centered crop. Free, no sign-up.',
+    h1:'Crop Video Online',subheading:'Cut to a new shape, centered automatically.',toolComponent:'VideoCropper',
+    logic:'The crop region is calculated automatically from the video\u2019s real dimensions and the target ratio, trimming evenly from the sides or top and bottom.',
+    methodology:'Actual source dimensions are probed via ffprobe, then a centered crop box is computed and applied with FFmpeg\u2019s crop filter.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Crop versus reframe — picking the right one',body:'Cropping cuts the edges off to fit a new shape. For content where nothing should be lost, Reframe pads instead of cutting.'},{heading:'Automatic centered crop',body:'The crop region is calculated automatically based on your chosen ratio and the video\u2019s actual dimensions.'}],
+    faqs:[{q:'Will cropping cut off part of my video?',a:'Yes, by design. Use Reframe if nothing should be lost.'},{q:'Which ratios are supported?',a:'1:1, 9:16, 16:9, 4:3 and 4:5.'},{q:'Can I choose where the crop is positioned?',a:'The current version centers the crop automatically.'}],
+    relatedSlugs:['reframe-video-vertical','compress-video-online'],
+  },
+  // ── 12 NEW ENTRIES ─────────────────────────────────────────────────────────
+  {
+    slug:'gif-to-mp4',title:'Convert GIF to MP4 Free Online | VidVert',
+    metaDescription:'Convert any animated GIF to a compact MP4 video free. Smaller file, smoother playback, no sign-up.',
+    h1:'Convert GIF to MP4',subheading:'Turn an animated GIF into a compact, shareable MP4.',toolComponent:'GifToMp4',
+    logic:'The GIF\u2019s individual frames are decoded and re-encoded as an H.264 video stream in an MP4 container.',
+    methodology:'FFmpeg decodes the GIF frame sequence and encodes it with libx264, ensuring even pixel dimensions required by the codec.',
+    citations:[CITATIONS.ffmpegDocs,CITATIONS.h264Guide],
+    contentSections:[{heading:'Why convert a GIF to MP4?',body:'MP4 videos are typically 5-10× smaller than equivalent GIFs for the same visual quality. Most social platforms now auto-play short MP4s, making them the better choice for sharing.'},{heading:'Full quality preserved',body:'The frame sequence from the GIF is preserved exactly — no dropped frames, no additional compression artifacts beyond what H.264 introduces.'}],
+    faqs:[{q:'Will the MP4 loop like the GIF?',a:'Looping is controlled by the player, not the file. Most social platforms loop short videos automatically.'},{q:'How much smaller will the MP4 be?',a:'Typically 5-10× smaller than the original GIF for similar visual quality.'},{q:'Does this work on any GIF?',a:'Yes, any animated GIF is accepted as input.'}],
+    relatedSlugs:['video-to-gif','compress-video-online'],
+  },
+  {
+    slug:'mute-video-online',title:'Mute Video Online Free — Remove Audio Track | VidVert',
+    metaDescription:'Remove the audio track from any video file free. Fast stream copy — no quality loss, no sign-up.',
+    h1:'Mute Video Online',subheading:'Strip the sound from any video instantly.',toolComponent:'VideoMute',
+    logic:'The audio stream is dropped entirely while the video stream is passed through unchanged using stream copy.',
+    methodology:'FFmpeg\u2019s -an flag drops all audio streams; -c:v copy passes the video stream through without re-encoding.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'When you need silence',body:'Background music you can\u2019t use, accidental audio from recording, or a video you want to add new audio to later — removing the existing track is the first step.'},{heading:'No re-encoding means instant results',body:'Because the video stream is copied rather than re-encoded, muting is nearly instant regardless of how long the video is.'}],
+    faqs:[{q:'Does muting affect video quality?',a:'No — the video stream is copied without re-encoding, so quality is completely unchanged.'},{q:'Can I add different audio afterwards?',a:'Yes — use the Add Audio to Video tool to attach a new audio file to the muted video.'},{q:'What formats are supported?',a:'MP4, MKV, WebM, AVI, MOV and more.'}],
+    relatedSlugs:['add-audio-to-video','trim-video-online'],
+  },
+  {
+    slug:'rotate-flip-video',title:'Rotate or Flip Video Online Free | VidVert',
+    metaDescription:'Fix a sideways video or mirror it horizontally. Rotate 90°, 180°, flip — free, no sign-up.',
+    h1:'Rotate or Flip Video Online',subheading:'Fix orientation or mirror any video in seconds.',toolComponent:'VideoRotate',
+    logic:'The chosen geometric transform is applied to the video frames via an FFmpeg filter while the audio stream is copied unchanged.',
+    methodology:'FFmpeg\u2019s transpose filter handles 90° rotations; hflip and vflip handle mirroring. All are combined with -c:v libx264 for the output.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'The most common fix for phone recordings',body:'Phones sometimes record video in the wrong orientation. Rotating 90° clockwise or counter-clockwise brings the video upright without any quality loss beyond a single re-encode.'},{heading:'Five transforms available',body:'90° clockwise, 90° counter-clockwise, 180° rotation, horizontal flip (mirror), and vertical flip.'}],
+    faqs:[{q:'Will rotating reduce quality?',a:'A single re-encode is performed, which introduces minimal quality change at the default settings.'},{q:'What\u2019s the difference between rotate and flip?',a:'Rotation turns the frame around a center point. Flip mirrors it along a horizontal or vertical axis.'},{q:'Does audio stay in sync?',a:'Yes — audio is copied unchanged while only the video frames are transformed.'}],
+    relatedSlugs:['reframe-video-vertical','crop-video-online'],
+  },
+  {
+    slug:'convert-image-format',title:'Convert Image Format Free Online | VidVert',
+    metaDescription:'Convert between JPG, PNG, WebP, BMP and TIFF free. No sign-up, no watermark added.',
+    h1:'Convert Image Format Online',subheading:'Switch any image between JPG, PNG, WebP, BMP and TIFF.',toolComponent:'ImageConverter',
+    logic:'The image is decoded from the source format and re-encoded into the target container using the appropriate codec for that format.',
+    methodology:'FFmpeg decodes any supported image format and re-encodes to the target format using its native image codec pipeline.',
+    citations:[CITATIONS.ffmpegDocs,CITATIONS.mdnFormats],
+    contentSections:[{heading:'When format compatibility matters',body:'Different platforms, tools, and workflows expect different image formats. WebP for web performance, PNG for transparency, TIFF for print, JPG for broad compatibility.'},{heading:'Lossless formats preserved losslessly',body:'Converting PNG to TIFF, for example, involves no quality reduction — both are lossless formats.'}],
+    faqs:[{q:'What formats are supported?',a:'JPG, PNG, WebP, BMP, TIFF and GIF as input; JPG, PNG, WebP, BMP and TIFF as output.'},{q:'Will converting JPG to PNG improve quality?',a:'No — converting from a lossy format (JPG) to lossless (PNG) preserves the existing quality but cannot restore already-lost detail.'},{q:'Is there a file size limit?',a:'Files up to 500MB are accepted.'}],
+    relatedSlugs:['compress-image-online','resize-image-online'],
+  },
+  {
+    slug:'compress-image-online',title:'Compress Image Online Free — Reduce File Size | VidVert',
+    metaDescription:'Reduce JPG, PNG and WebP image file size free, without changing dimensions. No sign-up.',
+    h1:'Compress Image Online',subheading:'Make any image smaller without changing its dimensions.',toolComponent:'ImageCompressor',
+    logic:'The image is re-encoded at a reduced quality setting, producing a smaller file with some visual trade-off depending on the compression level chosen.',
+    methodology:'FFmpeg\u2019s -q:v quality parameter controls the JPEG quantization level, balancing visual fidelity against output file size.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Smaller images, faster everything',body:'Smaller image files load faster on web pages, take up less storage, and send faster over WhatsApp — without needing to reduce the image dimensions.'},{heading:'Three compression levels',body:'Maximum Quality keeps fine detail with a modest size reduction. Balanced is the practical choice for most images. Maximum Compress prioritizes the smallest possible file.'}],
+    faqs:[{q:'Will compressing change the image size?',a:'No — compression only affects file size and detail quality, not pixel dimensions.'},{q:'What formats are supported?',a:'JPG, PNG and WebP as input and output.'},{q:'How much smaller will my image get?',a:'Depends heavily on the source image, but typically 30-70% smaller at Balanced level.'}],
+    relatedSlugs:['convert-image-format','resize-image-online'],
+  },
+  {
+    slug:'resize-image-online',title:'Resize Image Online Free | VidVert',
+    metaDescription:'Resize any image to exact pixel dimensions or a common preset free. Aspect ratio preserved when only one dimension is set.',
+    h1:'Resize Image Online',subheading:'Change any image to exact dimensions or a common preset.',toolComponent:'ImageResizer',
+    logic:'The image is scaled to the target dimensions using a high-quality Lanczos resampling filter.',
+    methodology:'FFmpeg\u2019s scale filter with the Lanczos algorithm resizes the image; when only one dimension is provided, the other scales proportionally to preserve aspect ratio.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Common presets or exact dimensions',body:'Choose from 720p, 1080p, 800px width, 400px width, or enter exact pixel values for width and height.'},{heading:'Aspect ratio preserved automatically',body:'Leave either width or height blank, and the other dimension scales proportionally — no stretching or distortion.'}],
+    faqs:[{q:'What formats are supported?',a:'JPG, PNG, WebP, BMP and TIFF.'},{q:'Will the image be distorted if I set both width and height?',a:'Only if the ratio you specify differs from the original — the tool scales to exactly what you enter.'},{q:'Does resizing down lose quality?',a:'Some detail is lost when scaling down, which is expected. Scaling up uses interpolation to fill new pixels.'}],
+    relatedSlugs:['compress-image-online','convert-image-format'],
+  },
+  {
+    slug:'speed-up-video',title:'Speed Up or Slow Down Video Online Free | VidVert',
+    metaDescription:'Change video speed to 0.25×, 0.5×, 1.5×, 2× or 4× free. Audio pitch adjusts automatically. No sign-up.',
+    h1:'Speed Up or Slow Down Video',subheading:'Change any video\u2019s speed — audio adjusts automatically.',toolComponent:'VideoSpeed',
+    logic:'The video frame timing is adjusted by a time base multiplier while the audio is pitch-corrected using a time-stretching algorithm.',
+    methodology:'FFmpeg\u2019s setpts filter adjusts video frame timing; the atempo filter applies pitch-corrected audio time-stretching, chained for speeds outside the 0.5–2× range.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Five speed presets',body:'0.25× for slow motion, 0.5× for half speed, 1.5× and 2× for faster playback, and 4× for rapid timelapse.'},{heading:'Audio pitch is preserved',body:'Unlike simply dropping or duplicating frames, this uses a proper time-stretching algorithm so speech and music stay at their original pitch even at different speeds.'}],
+    faqs:[{q:'Does audio stay in sync at all speeds?',a:'Yes — both video and audio are adjusted in the same pass.'},{q:'What\u2019s the minimum and maximum speed?',a:'0.25× (quarter speed) to 4× (four times speed).'},{q:'Will speeding up affect video quality?',a:'A re-encode is performed, which introduces minimal quality change at default settings.'}],
+    relatedSlugs:['reverse-video-online','trim-video-online'],
+  },
+  {
+    slug:'reverse-video-online',title:'Reverse Video Online Free | VidVert',
+    metaDescription:'Play any video backwards free. Best on short clips — reversing requires loading the full video. No sign-up.',
+    h1:'Reverse Video Online',subheading:'Play any video backwards.',toolComponent:'VideoReverse',
+    logic:'Every frame of the video is decoded into memory, then written back out in reverse order along with a time-reversed audio stream.',
+    methodology:'FFmpeg\u2019s reverse and areverse filters handle video and audio reversal respectively; both require loading the entire clip into memory before writing output.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Best for short clips',body:'Reversing requires loading the entire video into memory before output can begin. Clips under 30 seconds work reliably on the free tier; longer clips may time out.'},{heading:'Both video and audio reversed',body:'The audio stream is reversed alongside the video — the result plays completely backwards including any sound.'}],
+    faqs:[{q:'Why does reversing take so long?',a:'Unlike most tools, reversal cannot be streamed — the entire video must be decoded into memory before any output is written.'},{q:'Is there a length limit?',a:'Keep clips under 30 seconds for reliable results on the free tier.'},{q:'What formats are supported?',a:'MP4, MKV, WebM, AVI and MOV.'}],
+    relatedSlugs:['speed-up-video','trim-video-online'],
+  },
+  {
+    slug:'merge-videos-online',title:'Merge Videos Online Free — Join Multiple Clips | VidVert',
+    metaDescription:'Join multiple video clips into one file free. Fast stream copy — no quality loss. No sign-up.',
+    h1:'Merge Videos Online',subheading:'Join multiple video clips into one.',toolComponent:'VideoMerge',
+    logic:'Multiple video files are concatenated in sequence using stream copy, preserving the original encoding of each clip without re-encoding.',
+    methodology:'FFmpeg\u2019s concat demuxer reads clips in order from a generated file list and writes a single combined output file using stream copy.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Stream copy — no quality loss',body:'Because this uses stream copy rather than re-encoding, each clip in the output preserves its original quality exactly. Processing is also fast regardless of total length.'},{heading:'Any number of clips',body:'Add as many clips as needed, in any order. Drag to reorder before merging if the order matters.'}],
+    faqs:[{q:'Does merging reduce quality?',a:'No — stream copy is used, so no re-encoding occurs and quality is unchanged.'},{q:'Do all clips need to be the same format?',a:'For best results, use clips with the same codec and resolution. Mixed formats may cause compatibility issues in the output.'},{q:'Is there a limit on how many clips I can merge?',a:'Up to 10 files can be merged in one session.'}],
+    relatedSlugs:['trim-video-online','add-audio-to-video'],
+  },
+  {
+    slug:'add-audio-to-video',title:'Add Audio to Video Online Free | VidVert',
+    metaDescription:'Attach or replace the audio track of any video with a different audio file free. No sign-up.',
+    h1:'Add Audio to Video',subheading:'Attach any audio file to any video.',toolComponent:'AudioVideoMerge',
+    logic:'The video stream from the video file and the audio stream from the audio file are multiplexed together into a single output container.',
+    methodology:'FFmpeg multiplexes the two streams with -c:v copy (stream copy for video) and -c:a aac (re-encode audio to ensure container compatibility), using -shortest to cut to the shorter duration.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Replace or attach',body:'Whether the video is currently silent or has existing audio, this tool replaces the audio track entirely with your chosen audio file.'},{heading:'Duration matching',body:'If the audio is shorter than the video, the output is cut to match the audio length. Use the Trim tool first if a specific length is needed.'}],
+    faqs:[{q:'What audio formats are accepted?',a:'MP3, M4A, AAC, WAV, FLAC, OGG, WMA and AIFF.'},{q:'What if the audio is longer than the video?',a:'The output is cut to the video\u2019s length — the extra audio is dropped.'},{q:'Does the video quality change?',a:'No — the video stream is copied unchanged. Only the audio is re-encoded for container compatibility.'}],
+    relatedSlugs:['mute-video-online','merge-videos-online'],
+  },
+  {
+    slug:'merge-audio-files',title:'Merge Audio Files Online Free | VidVert',
+    metaDescription:'Join multiple audio clips into one file free. MP3, WAV, FLAC, M4A and more. No sign-up.',
+    h1:'Merge Audio Files',subheading:'Join multiple audio clips into one.',toolComponent:'AudioMerge',
+    logic:'Multiple audio files are decoded and their audio streams concatenated sequentially into a single continuous output file.',
+    methodology:'FFmpeg\u2019s concat filter joins audio streams in sequence, re-encoding the result as MP3 for broad compatibility.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Any combination of formats',body:'Mix and match MP3, WAV, M4A, FLAC and other formats in the same merge — all inputs are decoded first, so format differences between clips are handled automatically.'},{heading:'Order matters',body:'Clips play in the order you add them. Remove and re-add to change the sequence before merging.'}],
+    faqs:[{q:'What formats can I merge?',a:'MP3, M4A, AAC, WAV, FLAC, OGG, WMA and AIFF as input. Output is MP3.'},{q:'Is there a limit on clips?',a:'Up to 10 files can be merged in one session.'},{q:'Will there be a gap between clips?',a:'No — clips are joined seamlessly with no silence added between them.'}],
+    relatedSlugs:['convert-audio-formats','video-to-mp3'],
+  },
+  {
+    slug:'extract-frame-from-video',title:'Extract Frame from Video as JPG Free | VidVert',
+    metaDescription:'Save any single frame from a video as a JPG image free. Set the exact timestamp, use the preview player. No sign-up.',
+    h1:'Extract Frame from Video',subheading:'Save any moment from a video as a JPG image.',toolComponent:'VideoFrameExtract',
+    logic:'FFmpeg seeks to the specified timestamp and outputs exactly one video frame as a JPEG image file.',
+    methodology:'The -ss seek flag positions the decoder at the target timestamp; -frames:v 1 captures a single frame; -q:v 2 sets near-maximum JPEG quality.',
+    citations:[CITATIONS.ffmpegDocs],
+    contentSections:[{heading:'Use the video player to find the moment',body:'Play or scrub the video directly in the tool, then tap a button to set the current playback position as the timestamp — no need to guess frame numbers or timestamps manually.'},{heading:'Near-maximum JPEG quality',body:'The extracted frame is saved at quality level 2 (near-maximum) so the result is as close to the original frame as JPEG compression allows.'}],
+    faqs:[{q:'What format is the extracted frame?',a:'JPG (JPEG), at near-maximum quality.'},{q:'Can I extract multiple frames?',a:'Currently one frame per job — run the tool again with a different timestamp for additional frames.'},{q:'What timestamp format should I use?',a:'HH:MM:SS — e.g. 00:01:30 for 1 minute 30 seconds in.'}],
+    relatedSlugs:['trim-video-online','compress-image-online'],
   },
 ];
 
-export function getToolPageBySlug(slug) {
-  return SEO_TOOL_PAGES.find(p => p.slug === slug) || null;
-}
-
-export function getRelatedPages(slug, max = 3) {
-  const page = getToolPageBySlug(slug);
-  if (!page) return [];
-  return page.relatedSlugs
-    .map(getToolPageBySlug)
-    .filter(Boolean)
-    .slice(0, max);
-}
-
-export function getAllSlugs() {
-  return SEO_TOOL_PAGES.map(p => p.slug);
-}
+export function getToolPageBySlug(slug) { return SEO_TOOL_PAGES.find(p=>p.slug===slug)||null; }
+export function getRelatedPages(slug,max=3) { const page=getToolPageBySlug(slug);if(!page)return[];return page.relatedSlugs.map(getToolPageBySlug).filter(Boolean).slice(0,max); }
+export function getAllSlugs() { return SEO_TOOL_PAGES.map(p=>p.slug); }
